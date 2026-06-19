@@ -92,6 +92,12 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
                 return; // 無音
             }
             actualDb += 20.0 * Math.log10(multiplier);
+        } else if (serverPlayer.isSprinting()) {
+            double multiplier = Config.sprintVolumeMultiplier;
+            if (multiplier <= 0.0) {
+                return; // 無音
+            }
+            actualDb += 20.0 * Math.log10(multiplier);
         }
 
         UUID playerUUID = serverPlayer.getUUID();

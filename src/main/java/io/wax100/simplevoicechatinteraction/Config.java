@@ -38,6 +38,13 @@ public class Config {
                     "範囲: 0.0～1.0。デフォルト: 0.5")
             .defineInRange("sneak_volume_multiplier", 0.5, 0.0, 1.0);
 
+    private static final ForgeConfigSpec.DoubleValue SPRINT_VOLUME_MULTIPLIER = BUILDER
+            .comment("ダッシュ（スプリント）中の声の音量倍率（係数）。",
+                    "1.5にすると、ダッシュ中の声の大きさが1.5倍（約+3.5dB）に増幅されます。",
+                    "1.0にするとダッシュによる変化は発生しません。",
+                    "範囲: 0.0～10.0。デフォルト: 1.5")
+            .defineInRange("sprint_volume_multiplier", 1.5, 0.0, 10.0);
+
     // ── スカルク振動設定 ─────────────────────────────────────────────────
 
     private static final ForgeConfigSpec.IntValue VOICE_SCULK_FREQUENCY = BUILDER
@@ -125,6 +132,7 @@ public class Config {
     public static volatile boolean groupInteraction;
     public static volatile double whisperVolumeMultiplier;
     public static volatile double sneakVolumeMultiplier;
+    public static volatile double sprintVolumeMultiplier;
 
     // スカルク振動
     public static volatile int voiceSculkFrequency;
@@ -148,6 +156,7 @@ public class Config {
         groupInteraction = GROUP_INTERACTION.get();
         whisperVolumeMultiplier = WHISPER_VOLUME_MULTIPLIER.get();
         sneakVolumeMultiplier = SNEAK_VOLUME_MULTIPLIER.get();
+        sprintVolumeMultiplier = SPRINT_VOLUME_MULTIPLIER.get();
 
         voiceSculkFrequency = VOICE_SCULK_FREQUENCY.get();
         minimumActivationThreshold = MINIMUM_ACTIVATION_THRESHOLD.get();
