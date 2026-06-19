@@ -33,7 +33,7 @@ public class DebugCommand {
 
                             if (VoiceChatSculkPlugin.instance != null) {
                                 // 実際の音声インタラクションロジックを呼び出す
-                                VoiceChatSculkPlugin.instance.processAudioInteraction(player, db);
+                                VoiceChatSculkPlugin.instance.processAudioInteraction(player, db, false);
                                 
                                 source.sendSuccess(() -> Component.literal(
                                         "§a[SVC Debug] §f" + db + " dB の音声をシミュレートしました。"), true);

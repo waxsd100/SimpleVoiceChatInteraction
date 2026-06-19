@@ -58,13 +58,12 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         Object playerObj = senderConnection.getPlayer().getPlayer();
         if (!(playerObj instanceof ServerPlayer serverPlayer)) return;
 
-        if (!Config.whisperInteraction && event.getPacket().isWhispering()) return;
         if (!Config.groupInteraction && senderConnection.getGroup() != null) return;
 
         double dB = calculateAudioLevel(event.getPacket().getOpusEncodedData());
         if (Double.isInfinite(dB) || Double.isNaN(dB)) return;
 
-        processAudioInteraction(serverPlayer, dB);
+        processAudioInteraction(serverPlayer, dB, event.getPacket().isWhispering());
     }
 
     /**
@@ -73,11 +72,20 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
      *
      * @param serverPlayer 発動元プレイヤー
      * @param dB           音声レベル
+     * @param isWhispering 囁き声かどうか
      */
-    public void processAudioInteraction(ServerPlayer serverPlayer, double dB) {
+    public void processAudioInteraction(ServerPlayer serverPlayer, double dB, boolean isWhispering) {
         if (serverPlayer.isRemoved() || serverPlayer.hasDisconnected()) return;
         
         double actualDb = dB;
+        if (isWhispering) {
+            double multiplier = Config.whisperVolumeMultiplier;
+            if (multiplier <= 0.0) {
+                return; // 無音
+            }
+            actualDb += 20.0 * Math.log10(multiplier);
+        }
+
         if (serverPlayer.isCrouching()) {
             double multiplier = Config.sneakVolumeMultiplier;
             if (multiplier <= 0.0) {

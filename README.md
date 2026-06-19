@@ -11,7 +11,8 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 - Yelling in voice chat unleashes a sonic shockwave that damages nearby entities
 - Dynamic shockwave radius and damage based on voice volume
 - Bonus damage multipliers against monsters and wardens
-- Optional support for whisper and group chat vibrations
+- Optional support for group chat vibrations
+- Voice volume is automatically reduced when whispering (Configurable multiplier)
 - Voice volume is automatically reduced while sneaking (Configurable multiplier)
 - Voice testing command (`/voice_debug <dB>`)
 
@@ -22,7 +23,7 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 | Name                                  | Default Value | Description                                                  |
 |---------------------------------------|---------------|--------------------------------------------------------------|
 | `group_interaction`                   | `false`       | If talking in groups should trigger vibrations               |
-| `whisper_interaction`                 | `false`       | If whispering should trigger vibrations                      |
+| `whisper_volume_multiplier`           | `0.5`         | Voice volume multiplier while whispering (0.5 = approx -6dB) |
 | `sneak_volume_multiplier`             | `0.5`         | Voice volume multiplier while sneaking (0.5 = approx -6dB)   |
 | `voice_sculk_frequency`               | `9`           | The frequency of the voice vibration                         |
 | `minimum_activation_threshold`        | `-30`         | The audio level threshold to activate the sculk sensor in dB |

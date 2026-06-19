@@ -24,11 +24,12 @@ public class Config {
                     "デフォルト: false")
             .define("group_interaction", false);
 
-    private static final ForgeConfigSpec.BooleanValue WHISPER_INTERACTION = BUILDER
-            .comment("trueの場合、ささやき声がスカルク振動とショックウェーブを誘発する。",
-                    "falseの場合、ささやき声ではいかなる効果も発生しない。",
-                    "デフォルト: false")
-            .define("whisper_interaction", false);
+    private static final ForgeConfigSpec.DoubleValue WHISPER_VOLUME_MULTIPLIER = BUILDER
+            .comment("囁き声（Whisper）モード中の声の音量倍率（係数）。",
+                    "0.5にすると、声の大きさが半減（約-6dB）した扱いになります。",
+                    "0.0にすると囁き声中は完全に無音扱いになります。",
+                    "範囲: 0.0～1.0。デフォルト: 0.5")
+            .defineInRange("whisper_volume_multiplier", 0.5, 0.0, 1.0);
 
     private static final ForgeConfigSpec.DoubleValue SNEAK_VOLUME_MULTIPLIER = BUILDER
             .comment("スニーク（しゃがみ）中の声の音量倍率（係数）。",
@@ -122,7 +123,7 @@ public class Config {
 
     // インタラクションフィルター
     public static volatile boolean groupInteraction;
-    public static volatile boolean whisperInteraction;
+    public static volatile double whisperVolumeMultiplier;
     public static volatile double sneakVolumeMultiplier;
 
     // スカルク振動
@@ -145,7 +146,7 @@ public class Config {
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
         groupInteraction = GROUP_INTERACTION.get();
-        whisperInteraction = WHISPER_INTERACTION.get();
+        whisperVolumeMultiplier = WHISPER_VOLUME_MULTIPLIER.get();
         sneakVolumeMultiplier = SNEAK_VOLUME_MULTIPLIER.get();
 
         voiceSculkFrequency = VOICE_SCULK_FREQUENCY.get();
