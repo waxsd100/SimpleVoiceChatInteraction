@@ -38,7 +38,7 @@
 | `shockwave_player_damage_multiplier`  | `0.5`         | プレイヤーに対するダメージ倍率                           |
 | `shockwave_monster_damage_multiplier` | `5.0`         | モンスターに対するダメージ倍率                           |
 | `shockwave_warden_damage_multiplier`  | `10.0`        | ウォーデンに対するダメージ倍率                           |
-| `shockwave_cooldown`                  | `20`          | ショックウェーブのクールダウン(tick単位)                 |
+| `shockwave_cooldown`                  | `30000`       | ショックウェーブのクールダウン(ミリ秒単位。30000で30秒)  |
 | `shockwave_darkness_duration`         | `60`          | プレイヤーに付与される暗闇エフェクトの持続時間(tick単位) |
 
 ### ショックウェーブの攻撃範囲とダメージ表

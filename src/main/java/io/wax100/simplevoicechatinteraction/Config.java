@@ -121,8 +121,8 @@ public class Config {
 
     private static final ForgeConfigSpec.IntValue SHOCKWAVE_COOLDOWN = BUILDER
             .comment("プレイヤーごとのショックウェーブ発動クールダウン（ミリ秒単位）。",
-                    "範囲: 1000～60000。デフォルト: 5000（5秒）")
-            .defineInRange("shockwave_cooldown", 5000, 1000, 60000);
+                    "範囲: 1000～300000。デフォルト: 30000（30秒）")
+            .defineInRange("shockwave_cooldown", 30000, 1000, 300000);
 
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
