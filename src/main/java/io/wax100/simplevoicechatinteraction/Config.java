@@ -57,8 +57,8 @@ public class Config {
             .comment("スカルク振動を作動させるために必要な最小音量（dB SPL相当）。",
                     "日常の目安: 30(ささやき声), 60(普通の会話), 85(騒音)",
                     "この値より小さい音声は無視される。",
-                    "範囲: 0～100。デフォルト: 70")
-            .defineInRange("minimum_activation_threshold", 70, 0, 100);
+                    "範囲: 0～100。デフォルト: 50")
+            .defineInRange("minimum_activation_threshold", 50, 0, 100);
 
     // ── ソニックショックウェーブ設定 ─────────────────────────────────────
 
@@ -73,8 +73,8 @@ public class Config {
     private static final ForgeConfigSpec.IntValue SHOCKWAVE_THRESHOLD = BUILDER
             .comment("ショックウェーブ効果を発動するためのオーディオレベル閾値（dB SPL相当）。",
                     "通常はminimum_activation_thresholdより高い値（大きい音量）に設定すべき。",
-                    "範囲: 0～100。デフォルト: 90")
-            .defineInRange("shockwave_threshold", 90, 0, 100);
+                    "範囲: 0～100。デフォルト: 75")
+            .defineInRange("shockwave_threshold", 75, 0, 100);
 
     private static final ForgeConfigSpec.DoubleValue SHOCKWAVE_RADIUS = BUILDER
             .comment("ショックウェーブ効果の基本半径（ブロック単位）。",
@@ -152,7 +152,7 @@ public class Config {
     public static volatile int shockwaveCooldown;
 
     @SubscribeEvent
-    static void onLoad(final ModConfigEvent event) {
+    public static void onLoad(final ModConfigEvent event) {
         groupInteraction = GROUP_INTERACTION.get();
         whisperVolumeMultiplier = WHISPER_VOLUME_MULTIPLIER.get();
         sneakVolumeMultiplier = SNEAK_VOLUME_MULTIPLIER.get();
