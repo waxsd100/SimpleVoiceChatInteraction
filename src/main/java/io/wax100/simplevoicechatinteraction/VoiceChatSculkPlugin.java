@@ -60,7 +60,6 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
 
         if (!Config.whisperInteraction && event.getPacket().isWhispering()) return;
         if (!Config.groupInteraction && senderConnection.getGroup() != null) return;
-        if (!Config.sneakInteraction && serverPlayer.isCrouching()) return;
 
         double dB = calculateAudioLevel(event.getPacket().getOpusEncodedData());
         if (Double.isInfinite(dB) || Double.isNaN(dB)) return;
@@ -76,6 +75,17 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
      * @param dB           音声レベル
      */
     public void processAudioInteraction(ServerPlayer serverPlayer, double dB) {
+        if (serverPlayer.isRemoved() || serverPlayer.hasDisconnected()) return;
+        
+        double actualDb = dB;
+        if (serverPlayer.isCrouching()) {
+            double multiplier = Config.sneakVolumeMultiplier;
+            if (multiplier <= 0.0) {
+                return; // 無音
+            }
+            actualDb += 20.0 * Math.log10(multiplier);
+        }
+
         UUID playerUUID = serverPlayer.getUUID();
         long now = System.currentTimeMillis();
 
@@ -90,15 +100,16 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         MinecraftServer server = serverPlayer.getServer();
         if (server == null) return;
 
-        if (sculkReady && dB >= Config.minimumActivationThreshold) {
+        if (sculkReady && actualDb >= Config.minimumActivationThreshold) {
             cooldownManager.recordSculkActivation(playerUUID, now);
             int frequency = Config.voiceSculkFrequency;
             server.execute(() -> sculkEmitter.emit(serverPlayer, frequency));
         }
 
-        if (shockwaveReady && dB >= Config.shockwaveThreshold) {
+        if (shockwaveReady && actualDb >= Config.shockwaveThreshold) {
             cooldownManager.recordShockwaveActivation(playerUUID, now);
-            server.execute(() -> shockwaveExecutor.execute(serverPlayer, dB));
+            final double finalDb = actualDb;
+            server.execute(() -> shockwaveExecutor.execute(serverPlayer, finalDb));
         }
     }
 

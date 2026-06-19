@@ -12,7 +12,7 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 - Dynamic shockwave radius and damage based on voice volume
 - Bonus damage multipliers against monsters and wardens
 - Optional support for whisper and group chat vibrations
-- Talking while sneaking doesn't trigger vibrations (Configurable)
+- Voice volume is automatically reduced while sneaking (Configurable multiplier)
 - Voice testing command (`/voice_debug <dB>`)
 
 ## Config Values
@@ -23,7 +23,7 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 |---------------------------------------|---------------|--------------------------------------------------------------|
 | `group_interaction`                   | `false`       | If talking in groups should trigger vibrations               |
 | `whisper_interaction`                 | `false`       | If whispering should trigger vibrations                      |
-| `sneak_interaction`                   | `false`       | If talking while sneaking should trigger vibrations          |
+| `sneak_volume_multiplier`             | `0.5`         | Voice volume multiplier while sneaking (0.5 = approx -6dB)   |
 | `voice_sculk_frequency`               | `9`           | The frequency of the voice vibration                         |
 | `minimum_activation_threshold`        | `-30`         | The audio level threshold to activate the sculk sensor in dB |
 | `shockwave_enabled`                   | `true`        | If the sonic shockwave feature is enabled                    |
