@@ -121,17 +121,11 @@ public class VoiceMeterManager {
         if (shouldShow) {
             data.bossEvent.addPlayer(player);
             
-            // 進捗の計算（Configの最小〜最大値を 0.0 〜 1.0 にマッピング）
-            double minDb = Config.meterMinDb;
-            double maxDb = Config.meterMaxDb;
-            double range = maxDb - minDb;
-            double progress;
-            if (range <= 0.0) {
-                progress = (data.currentDb >= maxDb) ? 1.0 : 0.0;
-            } else {
-                progress = (data.currentDb - minDb) / range;
-                progress = Math.max(0.0, Math.min(1.0, progress));
-            }
+            // 進捗の計算（-60dB 〜 0dB を 0.0 〜 1.0 にマッピング）
+            double minDb = -60.0;
+            double maxDb = 0.0;
+            double progress = (data.currentDb - minDb) / (maxDb - minDb);
+            progress = Math.max(0.0, Math.min(1.0, progress));
             
             data.bossEvent.setProgress((float) progress);
             

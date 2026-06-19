@@ -43,8 +43,6 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 | `shockwave_warden_damage_multiplier`  | `10.0`        | Damage multiplier against wardens                            |
 | `shockwave_cooldown`                  | `30000`       | Cooldown of the shockwave effect in milliseconds (30s)       |
 | `shockwave_darkness_duration`         | `60`          | Duration of the darkness effect applied to players in ticks  |
-| `meter_min_db`                        | `-60.0`       | Minimum volume (empty BossBar) in dB                         |
-| `meter_max_db`                        | `0.0`         | Maximum volume (full BossBar) in dB                          |
 
 ### Shockwave Scaling (Radius & Damage)
 
