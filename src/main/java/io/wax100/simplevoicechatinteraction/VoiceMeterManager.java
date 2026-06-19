@@ -23,7 +23,7 @@ public class VoiceMeterManager {
         public ServerBossEvent bossEvent;
         public boolean manuallyEnabled;
         public boolean inAncientCity;
-        public double currentDb = -100.0;
+        public double currentDb = 0.0;
         public int lastDisplayedDb = -999;
         public boolean needsUpdate = false;
     }
@@ -82,10 +82,10 @@ public class VoiceMeterManager {
         if (data == null) return;
 
         // 負荷軽減：毎tickではなく、2tickごとに減衰処理を行う
-        if (serverPlayer.tickCount % 2 == 0 && data.currentDb > -100.0) {
+        if (serverPlayer.tickCount % 2 == 0 && data.currentDb > 0.0) {
             data.currentDb -= 2.0; // 減衰速度
-            if (data.currentDb < -100.0) {
-                data.currentDb = -100.0;
+            if (data.currentDb < 0.0) {
+                data.currentDb = 0.0;
             }
             data.needsUpdate = true;
         }
@@ -98,7 +98,7 @@ public class VoiceMeterManager {
 
         // メモリリーク防止：完全に不要になったデータのクリーンアップ（10秒に1回チェック）
         if (serverPlayer.tickCount % 200 == 0) {
-            if (!data.manuallyEnabled && !data.inAncientCity && data.currentDb <= -100.0) {
+            if (!data.manuallyEnabled && !data.inAncientCity && data.currentDb <= 0.0) {
                 data.bossEvent.removePlayer(serverPlayer);
                 playerMeters.remove(serverPlayer.getUUID());
             }
@@ -121,9 +121,9 @@ public class VoiceMeterManager {
         if (shouldShow) {
             data.bossEvent.addPlayer(player);
             
-            // 進捗の計算（-60dB 〜 0dB を 0.0 〜 1.0 にマッピング）
-            double minDb = -60.0;
-            double maxDb = 0.0;
+            // 進捗の計算（0dB 〜 100dB を 0.0 〜 1.0 にマッピング）
+            double minDb = 0.0;
+            double maxDb = 100.0;
             double progress = (data.currentDb - minDb) / (maxDb - minDb);
             progress = Math.max(0.0, Math.min(1.0, progress));
             

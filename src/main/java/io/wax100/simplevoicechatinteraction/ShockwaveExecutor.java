@@ -41,10 +41,10 @@ public class ShockwaveExecutor {
         ServerLevel level = sourcePlayer.serverLevel();
         
         double threshold = Config.shockwaveThreshold;
-        // dBが閾値から0.0（最大）までの間で0.0〜1.0の割合（progress）を計算
+        // dBが閾値から100.0（最大）までの間で0.0〜1.0の割合（progress）を計算
         double progress = 0.0;
-        if (threshold < 0.0) {
-            progress = (dB - threshold) / (0.0 - threshold);
+        if (threshold < 100.0) {
+            progress = (dB - threshold) / (100.0 - threshold);
             progress = Mth.clamp(progress, 0.0, 1.0);
         }
 

@@ -54,11 +54,11 @@ public class Config {
             .defineInRange("voice_sculk_frequency", 7, 1, 15);
 
     private static final ForgeConfigSpec.IntValue MINIMUM_ACTIVATION_THRESHOLD = BUILDER
-            .comment("スカルク振動を作動させるために必要な最小オーディオレベル（dB）。",
+            .comment("スカルク振動を作動させるために必要な最小音量（dB SPL相当）。",
+                    "日常の目安: 30(ささやき声), 60(普通の会話), 85(騒音)",
                     "この値より小さい音声は無視される。",
-                    "値が低いほど感度が高く、値が高いほど感度が低い。",
-                    "範囲: -80～0。デフォルト: -30")
-            .defineInRange("minimum_activation_threshold", -30, -80, 0);
+                    "範囲: 0～100。デフォルト: 70")
+            .defineInRange("minimum_activation_threshold", 70, 0, 100);
 
     // ── ソニックショックウェーブ設定 ─────────────────────────────────────
 
@@ -71,10 +71,10 @@ public class Config {
             .define("shockwave_enabled", true);
 
     private static final ForgeConfigSpec.IntValue SHOCKWAVE_THRESHOLD = BUILDER
-            .comment("ショックウェーブ効果を発動するためのオーディオレベル閾値（dB）。",
+            .comment("ショックウェーブ効果を発動するためのオーディオレベル閾値（dB SPL相当）。",
                     "通常はminimum_activation_thresholdより高い値（大きい音量）に設定すべき。",
-                    "範囲: -80～0。デフォルト: -10")
-            .defineInRange("shockwave_threshold", -10, -80, 0);
+                    "範囲: 0～100。デフォルト: 90")
+            .defineInRange("shockwave_threshold", 90, 0, 100);
 
     private static final ForgeConfigSpec.DoubleValue SHOCKWAVE_RADIUS = BUILDER
             .comment("ショックウェーブ効果の基本半径（ブロック単位）。",
@@ -83,7 +83,7 @@ public class Config {
             .defineInRange("shockwave_radius", 10.0, 1.0, 100.0);
 
     private static final ForgeConfigSpec.DoubleValue SHOCKWAVE_MAX_RADIUS_MULTIPLIER = BUILDER
-            .comment("最大音量（0dB）の時のショックウェーブ範囲の倍率。",
+            .comment("最大音量（100dB）の時のショックウェーブ範囲の倍率。",
                     "デフォルト: 2.0（閾値ギリギリの時の2倍の範囲になる）")
             .defineInRange("shockwave_max_radius_multiplier", 2.0, 1.0, 10.0);
 
@@ -94,7 +94,7 @@ public class Config {
             .defineInRange("shockwave_damage", 4.0, 0.0, 100.0);
 
     private static final ForgeConfigSpec.DoubleValue SHOCKWAVE_MAX_DAMAGE_MULTIPLIER = BUILDER
-            .comment("最大音量（0dB）の時のショックウェーブダメージの倍率。",
+            .comment("最大音量（100dB）の時のショックウェーブダメージの倍率。",
                     "デフォルト: 2.0（閾値ギリギリの時の2倍のダメージになる）")
             .defineInRange("shockwave_max_damage_multiplier", 2.0, 1.0, 10.0);
 

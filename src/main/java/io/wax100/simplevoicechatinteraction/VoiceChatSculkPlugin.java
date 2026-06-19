@@ -71,7 +71,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         if (!Config.groupInteraction && senderConnection.getGroup() != null) return;
 
         double dB = calculateAudioLevel(serverPlayer.getUUID(), event.getPacket().getOpusEncodedData());
-        if (Double.isInfinite(dB) || Double.isNaN(dB)) return;
+        if (dB <= 0.0) return;
 
         processAudioInteraction(serverPlayer, dB, event.getPacket().isWhispering());
     }
@@ -142,14 +142,14 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
 
     private double calculateAudioLevel(UUID playerUUID, byte[] opusData) {
         if (opusData == null || opusData.length == 0 || voicechatApi == null) {
-            return Double.NEGATIVE_INFINITY;
+            return 0.0;
         }
 
         OpusDecoder decoder = decoders.computeIfAbsent(playerUUID, k -> voicechatApi.createDecoder());
         try {
             short[] pcmData = decoder.decode(opusData);
             if (pcmData == null || pcmData.length == 0) {
-                return Double.NEGATIVE_INFINITY;
+                return 0.0;
             }
 
             return AudioUtils.calculateDbFromPcm(pcmData);
@@ -160,7 +160,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             if (!decoder.isClosed()) {
                 decoder.close();
             }
-            return Double.NEGATIVE_INFINITY;
+            return 0.0;
         }
     }
 }

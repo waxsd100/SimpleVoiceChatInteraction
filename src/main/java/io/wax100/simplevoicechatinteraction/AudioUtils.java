@@ -28,7 +28,7 @@ public final class AudioUtils {
      */
     public static double calculateDbFromPcm(short[] pcmData) {
         if (pcmData == null || pcmData.length == 0) {
-            return Double.NEGATIVE_INFINITY;
+            return 0.0;
         }
 
         // RMS（二乗平均平方根）振幅を計算
@@ -40,12 +40,15 @@ public final class AudioUtils {
 
         // 事実上の無音
         if (rms < 1.0) {
-            return Double.NEGATIVE_INFINITY;
+            return 0.0;
         }
 
         // フルスケール基準のdBに変換
-        // dB = 20 * log10(rms / 32767)
-        return 20.0 * Math.log10(rms / Short.MAX_VALUE);
+        // dBFS = 20 * log10(rms / 32767)
+        double dbfs = 20.0 * Math.log10(rms / Short.MAX_VALUE);
+        
+        // デジタル音声の dBFS（-100～0）を、人間が直感的に分かりやすい音圧レベル dB SPL（0～100）に変換する
+        return Math.max(0.0, dbfs + 100.0);
     }
 
 }

@@ -25,7 +25,7 @@ public class DebugCommand {
 
         dispatcher.register(Commands.literal("voice_debug")
                 .requires(source -> source.hasPermission(2)) // OP権限が必要
-                .then(Commands.argument("db", DoubleArgumentType.doubleArg(-100.0, 0.0))
+                .then(Commands.argument("db", DoubleArgumentType.doubleArg(0.0, 100.0))
                         .executes(context -> {
                             CommandSourceStack source = context.getSource();
                             double db = DoubleArgumentType.getDouble(context, "db");
