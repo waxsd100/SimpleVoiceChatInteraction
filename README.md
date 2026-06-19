@@ -31,9 +31,9 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 | `sneak_volume_multiplier`             | `0.5`         | Voice volume multiplier while sneaking (0.5 = approx -6dB)   |
 | `sprint_volume_multiplier`            | `1.5`         | Voice volume multiplier while sprinting (1.5 = approx +3.5dB)|
 | `voice_sculk_frequency`               | `7`           | The sculk sensor frequency emitted by voice (1-15)           |
-| `minimum_activation_threshold`        | `70`          | Minimum audio level to activate sculk (dB SPL)               |
+| `minimum_activation_threshold`        | `50`          | Minimum audio level to activate sculk (dB SPL)               |
 | `shockwave_enabled`                   | `true`        | Whether the shockwave effect is enabled                      |
-| `shockwave_threshold`                 | `90`          | Audio level required to trigger a shockwave (dB SPL)         |
+| `shockwave_threshold`                 | `75`          | Audio level required to trigger a shockwave (dB SPL)         |
 | `shockwave_radius`                    | `10.0`        | Base radius of the shockwave effect                          |
 | `shockwave_max_radius_multiplier`     | `2.0`         | Max radius multiplier at maximum volume (100dB)              |
 | `shockwave_damage`                    | `4.0`         | Base damage of the shockwave effect                          |

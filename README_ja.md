@@ -31,9 +31,9 @@
 | `sneak_volume_multiplier`             | `0.5`         | スニーク中の声の音量倍率（0.5で半減＝約-6dB相当）        |
 | `sprint_volume_multiplier`            | `1.5`         | ダッシュ中の声の音量倍率（1.5で増幅＝約+3.5dB相当）      |
 | `voice_sculk_frequency`               | `7`           | 声の振動に対するスカルクセンサーの周波数(1〜15)          |
-| `minimum_activation_threshold`        | `70`          | スカルク振動を作動させる最小音圧レベル(dB SPL)           |
+| `minimum_activation_threshold`        | `50`          | スカルク振動を作動させる最小音圧レベル(dB SPL)           |
 | `shockwave_enabled`                   | `true`        | ショックウェーブ効果を有効にするかどうか                 |
-| `shockwave_threshold`                 | `90`          | ショックウェーブを発動する最小音圧レベル(dB SPL)         |
+| `shockwave_threshold`                 | `75`          | ショックウェーブを発動する最小音圧レベル(dB SPL)         |
 | `shockwave_radius`                    | `10.0`        | ショックウェーブの基本範囲（ブロック単位）               |
 | `shockwave_max_radius_multiplier`     | `2.0`         | 最大音量(100dB)時の範囲倍率                              |
 | `shockwave_damage`                    | `4.0`         | ショックウェーブの基本ダメージ                           |
