@@ -26,7 +26,7 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 
 | Name                                  | Default Value | Description                                                  |
 |---------------------------------------|---------------|--------------------------------------------------------------|
-| `group_interaction`                   | `false`       | If talking in groups should trigger vibrations               |
+| `group_interaction`                   | `true`        | If talking in groups should trigger vibrations               |
 | `whisper_volume_multiplier`           | `0.5`         | Voice volume multiplier while whispering (0.5 = approx -6dB) |
 | `sneak_volume_multiplier`             | `0.5`         | Voice volume multiplier while sneaking (0.5 = approx -6dB)   |
 | `sprint_volume_multiplier`            | `1.5`         | Voice volume multiplier while sprinting (1.5 = approx +3.5dB)|
