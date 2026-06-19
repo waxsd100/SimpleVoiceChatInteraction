@@ -48,8 +48,8 @@ public class Config {
             .comment("スカルク振動を作動させるために必要な最小オーディオレベル（dB）。",
                     "この値より小さい音声は無視される。",
                     "値が低いほど感度が高く、値が高いほど感度が低い。",
-                    "範囲: -80～0。デフォルト: -50")
-            .defineInRange("minimum_activation_threshold", -50, -80, 0);
+                    "範囲: -80～0。デフォルト: -30")
+            .defineInRange("minimum_activation_threshold", -30, -80, 0);
 
     // ── ソニックショックウェーブ設定 ─────────────────────────────────────
 
@@ -64,8 +64,8 @@ public class Config {
     private static final ForgeConfigSpec.IntValue SHOCKWAVE_THRESHOLD = BUILDER
             .comment("ショックウェーブ効果を発動するためのオーディオレベル閾値（dB）。",
                     "通常はminimum_activation_thresholdより高い値（大きい音量）に設定すべき。",
-                    "範囲: -80～0。デフォルト: -30")
-            .defineInRange("shockwave_threshold", -30, -80, 0);
+                    "範囲: -80～0。デフォルト: -10")
+            .defineInRange("shockwave_threshold", -10, -80, 0);
 
     private static final ForgeConfigSpec.DoubleValue SHOCKWAVE_RADIUS = BUILDER
             .comment("ショックウェーブ効果の半径（ブロック単位）。",

@@ -25,6 +25,9 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
+    /** デバッグコマンド等からアクセスするためのシングルトンインスタンス */
+    public static VoiceChatSculkPlugin instance;
+
     private final CooldownManager cooldownManager = new CooldownManager();
     private final SculkVibrationEmitter sculkEmitter = new SculkVibrationEmitter();
     private final ShockwaveExecutor shockwaveExecutor = new ShockwaveExecutor();
@@ -39,6 +42,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     @Override
     public void initialize(VoicechatApi api) {
         this.voicechatApi = api;
+        instance = this;
         LOGGER.info("[SimpleVoiceChatInteraction] VoiceChatプラグイン初期化完了");
     }
 
@@ -58,6 +62,20 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         if (!Config.groupInteraction && senderConnection.getGroup() != null) return;
         if (!Config.sneakInteraction && serverPlayer.isCrouching()) return;
 
+        double dB = calculateAudioLevel(event.getPacket().getOpusEncodedData());
+        if (Double.isInfinite(dB) || Double.isNaN(dB)) return;
+
+        processAudioInteraction(serverPlayer, dB);
+    }
+
+    /**
+     * オーディオレベルに基づいたインタラクション処理を実行する。
+     * デバッグコマンドからも呼び出せるように公開。
+     *
+     * @param serverPlayer 発動元プレイヤー
+     * @param dB           音声レベル
+     */
+    public void processAudioInteraction(ServerPlayer serverPlayer, double dB) {
         UUID playerUUID = serverPlayer.getUUID();
         long now = System.currentTimeMillis();
 
@@ -68,9 +86,6 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
                 && !cooldownManager.isShockwaveInCooldown(playerUUID, now, Config.shockwaveCooldown);
 
         if (!sculkReady && !shockwaveReady) return;
-
-        double dB = calculateAudioLevel(event.getPacket().getOpusEncodedData());
-        if (Double.isInfinite(dB) || Double.isNaN(dB)) return;
 
         MinecraftServer server = serverPlayer.getServer();
         if (server == null) return;
