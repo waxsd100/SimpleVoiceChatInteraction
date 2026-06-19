@@ -95,8 +95,8 @@ public class Config {
         SHOCKWAVE_THRESHOLD = BUILDER
                 .comment("ショックウェーブ効果を発動するためのオーディオレベル閾値（dB SPL相当）。",
                         "通常はminimum_activation_thresholdより高い値（大きい音量）に設定すべき。",
-                        "範囲: 0～100。デフォルト: 75")
-                .defineInRange("shockwave_threshold", 75, 0, 100);
+                        "範囲: 0～100。デフォルト: 100")
+                .defineInRange("shockwave_threshold", 100, 0, 100);
 
         SHOCKWAVE_RADIUS = BUILDER
                 .comment("ショックウェーブ効果の基本半径（ブロック単位）。",
@@ -138,8 +138,8 @@ public class Config {
         SHOCKWAVE_DARKNESS_DURATION = BUILDER
                 .comment("周囲のプレイヤーに付与される暗闇エフェクトの持続時間（tick単位）。",
                         "20 tick = 1秒。",
-                        "範囲: 0～6000。デフォルト: 100（5秒）")
-                .defineInRange("shockwave_darkness_duration", 100, 0, 6000);
+                        "範囲: 0～6000。デフォルト: 60（3秒）")
+                .defineInRange("shockwave_darkness_duration", 60, 0, 6000);
 
         SHOCKWAVE_COOLDOWN = BUILDER
                 .comment("プレイヤーごとのショックウェーブ発動クールダウン（ミリ秒単位）。",
@@ -177,6 +177,10 @@ public class Config {
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
+        reloadCachedValues();
+    }
+
+    public static void reloadCachedValues() {
         groupInteraction = GROUP_INTERACTION.get();
         whisperVolumeMultiplier = WHISPER_VOLUME_MULTIPLIER.get();
         sneakVolumeMultiplier = SNEAK_VOLUME_MULTIPLIER.get();

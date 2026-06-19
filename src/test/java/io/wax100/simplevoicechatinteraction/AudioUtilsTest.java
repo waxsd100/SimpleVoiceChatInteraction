@@ -105,8 +105,8 @@ class AudioUtilsTest {
          * これはオーディオ工学の基本的な関係: 振幅半分 ≈ -6dB
          */
         @Test
-        @DisplayName("半分の音量の場合、約94dBを返す")
-        void 半分の音量の場合約94dBを返す() {
+        @DisplayName("半分の音量の場合、約91dBを返す")
+        void 半分の音量の場合約91dBを返す() {
             short halfMax = (short) (Short.MAX_VALUE / 2);
             short[] halfVolume = new short[960];
             for (int i = 0; i < halfVolume.length; i++) {
@@ -115,9 +115,9 @@ class AudioUtilsTest {
 
             double result = AudioUtils.calculateDbFromPcm(halfVolume);
 
-            // 100 - 6.02 = 93.98dBに近い値（±0.1の許容誤差）
-            assertEquals(93.98, result, 0.1,
-                    "半分の音量は約94dBを返すべき（オーディオの基本法則）");
+            // 100 - (6.02 * 1.5) = 90.97dBに近い値（±0.1の許容誤差）
+            assertEquals(90.97, result, 0.1,
+                    "半分の音量は約91dBを返すべき（オーディオの基本法則 + スケーリング）");
         }
 
         /**
@@ -146,7 +146,7 @@ class AudioUtilsTest {
         @DisplayName("閾値比較ロジックの検証: dB値が閾値以上かを正しく判定する")
         void 閾値比較ロジックの検証() {
             // 中程度の音量のPCMデータを作成
-            // RMS ≈ 3277 → dBFS ≈ -20 dB → dB SPL ≈ 80 dB
+            // RMS ≈ 3277 → dBFS ≈ -20 dB → dB SPL ≈ 70 dB
             short[] mediumVolume = new short[960];
             short sampleValue = (short) (Short.MAX_VALUE / 10); // 約3276
             for (int i = 0; i < mediumVolume.length; i++) {

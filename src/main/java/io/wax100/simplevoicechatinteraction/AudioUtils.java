@@ -47,8 +47,10 @@ public final class AudioUtils {
         // dBFS = 20 * log10(rms / 32767)
         double dbfs = 20.0 * Math.log10(rms / Short.MAX_VALUE);
         
-        // デジタル音声の dBFS（-100～0）を、人間が直感的に分かりやすい音圧レベル dB SPL（0～100）に変換する
-        return Math.max(0.0, dbfs + 100.0);
+        // デジタル音声の dBFS（-100～0）を、人間が直感的に分かりやすい音圧レベル dB SPL（0～100）に変換する。
+        // READMEの表（100=Max, 60~70=普通, 30以下=無音）に正確に合わせるため、
+        // ダイナミックレンジを広げる係数(1.5)をかけて 100dB を最大値とする。
+        return Math.max(0.0, 100.0 + (dbfs * 1.5));
     }
 
 }

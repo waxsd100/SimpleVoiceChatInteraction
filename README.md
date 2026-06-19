@@ -19,6 +19,7 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 - Commands:
   - `/voice_debug <dB>`: Test voice triggers
   - `/voice_meter`: Manually toggle the Voice Meter UI
+  - `/voice_reload`: Reloads the configuration file from disk (Requires OP level 2)
 
 ## Config Values
 
@@ -33,7 +34,7 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 | `voice_sculk_frequency`               | `7`           | The sculk sensor frequency emitted by voice (1-15)           |
 | `minimum_activation_threshold`        | `50`          | Minimum audio level to activate sculk (dB SPL)               |
 | `shockwave_enabled`                   | `true`        | Whether the shockwave effect is enabled                      |
-| `shockwave_threshold`                 | `75`          | Audio level required to trigger a shockwave (dB SPL)         |
+| `shockwave_threshold`                 | `100`         | Audio level required to trigger a shockwave (dB SPL)         |
 | `shockwave_radius`                    | `10.0`        | Base radius of the shockwave effect                          |
 | `shockwave_max_radius_multiplier`     | `2.0`         | Max radius multiplier at maximum volume (100dB)              |
 | `shockwave_damage`                    | `4.0`         | Base damage of the shockwave effect                          |
@@ -46,7 +47,7 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 
 ### Shockwave Scaling (Radius & Damage)
 
-The shockwave scales dynamically based on voice volume. At minimum volume (e.g., `75dB`), the multiplier is 1.0x. At maximum volume (`100dB`), it scales up to the max multipliers configured.
+The shockwave scales dynamically based on voice volume. At minimum volume (e.g., `80dB`), the multiplier is 1.0x. At maximum volume (`100dB`), it scales up to the max multipliers configured.
 
 **Radius**
 - Minimum volume: `10.0` blocks

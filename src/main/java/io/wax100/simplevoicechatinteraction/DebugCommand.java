@@ -53,5 +53,34 @@ public class DebugCommand {
                     return 1;
                 })
         );
+
+        // コンフィグリロードコマンド
+        dispatcher.register(Commands.literal("voice_reload")
+                .requires(source -> source.hasPermission(2)) // OP権限が必要
+                .executes(context -> {
+                    net.minecraftforge.fml.config.ModConfig modConfig = net.minecraftforge.fml.config.ConfigTracker.INSTANCE.fileMap().values().stream()
+                            .filter(config -> config.getModId().equals(Simplevoicechatinteraction.MODID))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (modConfig != null) {
+                        try {
+                            com.electronwill.nightconfig.core.file.CommentedFileConfig fileConfig = 
+                                    com.electronwill.nightconfig.core.file.CommentedFileConfig.builder(modConfig.getFullPath())
+                                    .sync().autosave().build();
+                            fileConfig.load();
+                            modConfig.getSpec().acceptConfig(fileConfig);
+                            Config.reloadCachedValues();
+                            
+                            context.getSource().sendSuccess(() -> Component.literal("§a[SVC Interaction] 設定ファイルを再読み込みしました。 (Config reloaded)"), true);
+                        } catch (Exception e) {
+                            context.getSource().sendFailure(Component.literal("§c[SVC Interaction] 設定のリロードに失敗しました: " + e.getMessage()));
+                        }
+                    } else {
+                        context.getSource().sendFailure(Component.literal("§c[SVC Interaction] コンフィグファイルが見つかりません。"));
+                    }
+                    return 1;
+                })
+        );
     }
 }

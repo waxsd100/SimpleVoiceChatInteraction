@@ -136,6 +136,9 @@ public class VoiceMeterManager {
                 data.lastDisplayedDb = currentDbInt;
                 
                 if (data.currentDb >= Config.shockwaveThreshold) {
+                    data.bossEvent.setColor(BossEvent.BossBarColor.PURPLE);
+                    data.bossEvent.setName(Component.literal("§5Voice Volume: " + currentDbInt + " dB (SHOCKWAVE)"));
+                } else if (data.currentDb >= 80.0) {
                     data.bossEvent.setColor(BossEvent.BossBarColor.RED);
                     data.bossEvent.setName(Component.literal("§cVoice Volume: " + currentDbInt + " dB"));
                 } else if (data.currentDb >= Config.minimumActivationThreshold) {
