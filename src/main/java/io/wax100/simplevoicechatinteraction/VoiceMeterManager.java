@@ -24,26 +24,27 @@ public class VoiceMeterManager {
         public boolean manuallyEnabled;
         public boolean inAncientCity;
         public double currentDb = -100.0;
-        public long lastUpdatedTime;
+        public int lastDisplayedDb = -999;
+        public boolean needsUpdate = false;
     }
 
     public static void updateMeter(ServerPlayer player, double dB) {
-        MeterData data = playerMeters.computeIfAbsent(player.getUUID(), uuid -> createMeter(player));
+        MeterData data = playerMeters.computeIfAbsent(player.getUUID(), uuid -> createAndRegisterMeter(player));
         data.currentDb = Math.max(data.currentDb, dB); // ピークホールド
-        data.lastUpdatedTime = System.currentTimeMillis();
-        
-        updateBossBar(player, data);
+        data.needsUpdate = true;
     }
 
     public static void toggleManual(ServerPlayer player) {
-        MeterData data = playerMeters.computeIfAbsent(player.getUUID(), uuid -> createMeter(player));
+        MeterData data = playerMeters.computeIfAbsent(player.getUUID(), uuid -> createAndRegisterMeter(player));
         data.manuallyEnabled = !data.manuallyEnabled;
-        updateBossBar(player, data);
+        data.needsUpdate = true;
         
         player.sendSystemMessage(Component.literal("§a[SVC] 音量メーターを " + (data.manuallyEnabled ? "§eオン" : "§cオフ") + " §aにしました。"));
+        updateBossBar(player, data);
+        data.needsUpdate = false;
     }
 
-    private static MeterData createMeter(ServerPlayer player) {
+    private static MeterData createAndRegisterMeter(ServerPlayer player) {
         MeterData data = new MeterData();
         data.bossEvent = new ServerBossEvent(
                 Component.literal("Voice Volume"),
@@ -58,27 +59,48 @@ public class VoiceMeterManager {
         if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer serverPlayer)) return;
 
         MeterData data = playerMeters.get(serverPlayer.getUUID());
-        if (data == null) return;
 
-        // 1秒に1回、古代都市（ディープダークバイオーム）判定を更新
-        if (serverPlayer.tickCount % 20 == 0) {
+        // 負荷軽減：40tick(2秒)に1回だけ、古代都市（ディープダークバイオーム）判定を行う
+        if (serverPlayer.tickCount % 40 == 0) {
             boolean inDeepDark = serverPlayer.serverLevel().getBiome(serverPlayer.blockPosition()).is(Biomes.DEEP_DARK);
-            if (data.inAncientCity != inDeepDark) {
-                data.inAncientCity = inDeepDark;
-                updateBossBar(serverPlayer, data);
+            if (inDeepDark) {
+                if (data == null) {
+                    data = createAndRegisterMeter(serverPlayer);
+                    playerMeters.put(serverPlayer.getUUID(), data);
+                }
+                if (!data.inAncientCity) {
+                    data.inAncientCity = true;
+                    data.needsUpdate = true;
+                }
+            } else if (data != null && data.inAncientCity) {
+                data.inAncientCity = false;
+                data.needsUpdate = true;
             }
         }
 
-        // dBの減衰（なめらかに下がるアニメーション）
-        long now = System.currentTimeMillis();
-        if (now - data.lastUpdatedTime > 50) { // 50msごとにチェック
-            if (data.currentDb > -100.0) {
-                data.currentDb -= 2.0; // 減衰速度
-                if (data.currentDb < -100.0) {
-                    data.currentDb = -100.0;
-                }
-                updateBossBar(serverPlayer, data);
-                data.lastUpdatedTime = now;
+        // メーターデータが存在しない（手動表示でもなく、古代都市でもなく、発声もしていない）場合は処理スキップ
+        if (data == null) return;
+
+        // 負荷軽減：毎tickではなく、2tickごとに減衰処理を行う
+        if (serverPlayer.tickCount % 2 == 0 && data.currentDb > -100.0) {
+            data.currentDb -= 2.0; // 減衰速度
+            if (data.currentDb < -100.0) {
+                data.currentDb = -100.0;
+            }
+            data.needsUpdate = true;
+        }
+
+        // 状態が変化した時だけパケットを送信してBossBarを更新する
+        if (data.needsUpdate) {
+            updateBossBar(serverPlayer, data);
+            data.needsUpdate = false;
+        }
+
+        // メモリリーク防止：完全に不要になったデータのクリーンアップ（10秒に1回チェック）
+        if (serverPlayer.tickCount % 200 == 0) {
+            if (!data.manuallyEnabled && !data.inAncientCity && data.currentDb <= -100.0) {
+                data.bossEvent.removePlayer(serverPlayer);
+                playerMeters.remove(serverPlayer.getUUID());
             }
         }
     }
@@ -107,16 +129,21 @@ public class VoiceMeterManager {
             
             data.bossEvent.setProgress((float) progress);
             
-            // 色の変更（安全:青、スカルク反応:黄、ショックウェーブ:赤）
-            if (data.currentDb >= Config.shockwaveThreshold) {
-                data.bossEvent.setColor(BossEvent.BossBarColor.RED);
-                data.bossEvent.setName(Component.literal("§cVoice Volume: " + String.format("%.1f", data.currentDb) + " dB"));
-            } else if (data.currentDb >= Config.minimumActivationThreshold) {
-                data.bossEvent.setColor(BossEvent.BossBarColor.YELLOW);
-                data.bossEvent.setName(Component.literal("§eVoice Volume: " + String.format("%.1f", data.currentDb) + " dB"));
-            } else {
-                data.bossEvent.setColor(BossEvent.BossBarColor.BLUE);
-                data.bossEvent.setName(Component.literal("§bVoice Volume: " + String.format("%.1f", data.currentDb) + " dB"));
+            // 文字列生成とパケット送信の負荷を抑えるため、整数値(int)が変わった時だけテキストを更新
+            int currentDbInt = (int) Math.round(data.currentDb);
+            if (currentDbInt != data.lastDisplayedDb) {
+                data.lastDisplayedDb = currentDbInt;
+                
+                if (data.currentDb >= Config.shockwaveThreshold) {
+                    data.bossEvent.setColor(BossEvent.BossBarColor.RED);
+                    data.bossEvent.setName(Component.literal("§cVoice Volume: " + currentDbInt + " dB"));
+                } else if (data.currentDb >= Config.minimumActivationThreshold) {
+                    data.bossEvent.setColor(BossEvent.BossBarColor.YELLOW);
+                    data.bossEvent.setName(Component.literal("§eVoice Volume: " + currentDbInt + " dB"));
+                } else {
+                    data.bossEvent.setColor(BossEvent.BossBarColor.BLUE);
+                    data.bossEvent.setName(Component.literal("§bVoice Volume: " + currentDbInt + " dB"));
+                }
             }
         } else {
             data.bossEvent.removePlayer(player);
