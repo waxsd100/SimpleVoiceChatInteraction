@@ -43,6 +43,8 @@
 | `shockwave_warden_damage_multiplier`  | `10.0`        | ウォーデンに対するダメージ倍率                           |
 | `shockwave_cooldown`                  | `30000`       | ショックウェーブのクールダウン(ミリ秒単位。30000で30秒)  |
 | `shockwave_darkness_duration`         | `60`          | プレイヤーに付与される暗闇エフェクトの持続時間(tick単位) |
+| `meter_min_db`                        | `-60.0`       | 音量メーター(BossBar)の最小値（空になる音量）            |
+| `meter_max_db`                        | `0.0`         | 音量メーター(BossBar)の最大値（満タンになる音量）        |
 
 ### ショックウェーブの攻撃範囲とダメージ表
 

@@ -124,6 +124,18 @@ public class Config {
                     "範囲: 1000～300000。デフォルト: 30000（30秒）")
             .defineInRange("shockwave_cooldown", 30000, 1000, 300000);
 
+    // ── メーター設定 ─────────────────────────────────────────────────
+
+    private static final ForgeConfigSpec.DoubleValue METER_MIN_DB = BUILDER
+            .comment("音量メーター（BossBar）の最小値（空っぽになるdB）。",
+                    "範囲: -100.0～0.0。デフォルト: -60.0")
+            .defineInRange("meter_min_db", -60.0, -100.0, 0.0);
+
+    private static final ForgeConfigSpec.DoubleValue METER_MAX_DB = BUILDER
+            .comment("音量メーター（BossBar）の最大値（満タンになるdB）。",
+                    "範囲: -50.0～10.0。デフォルト: 0.0")
+            .defineInRange("meter_max_db", 0.0, -50.0, 10.0);
+
     static final ForgeConfigSpec SPEC = BUILDER.build();
 
     // ── キャッシュ済み設定値（スレッド間アクセスのためvolatile） ──────────
@@ -151,6 +163,10 @@ public class Config {
     public static volatile int shockwaveDarknessDuration;
     public static volatile int shockwaveCooldown;
 
+    // メーター
+    public static volatile double meterMinDb;
+    public static volatile double meterMaxDb;
+
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {
         groupInteraction = GROUP_INTERACTION.get();
@@ -172,5 +188,8 @@ public class Config {
         shockwaveWardenDamageMultiplier = SHOCKWAVE_WARDEN_DAMAGE_MULTIPLIER.get();
         shockwaveDarknessDuration = SHOCKWAVE_DARKNESS_DURATION.get();
         shockwaveCooldown = SHOCKWAVE_COOLDOWN.get();
+
+        meterMinDb = METER_MIN_DB.get();
+        meterMaxDb = METER_MAX_DB.get();
     }
 }

@@ -121,9 +121,9 @@ public class VoiceMeterManager {
         if (shouldShow) {
             data.bossEvent.addPlayer(player);
             
-            // 進捗の計算（-60dB 〜 0dB を 0.0 〜 1.0 にマッピング）
-            double minDb = -60.0;
-            double maxDb = 0.0;
+            // 進捗の計算（Configの最小〜最大値を 0.0 〜 1.0 にマッピング）
+            double minDb = Config.meterMinDb;
+            double maxDb = Config.meterMaxDb;
             double progress = (data.currentDb - minDb) / (maxDb - minDb);
             progress = Math.max(0.0, Math.min(1.0, progress));
             
