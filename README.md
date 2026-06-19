@@ -50,6 +50,7 @@ The shockwave scales dynamically based on voice volume. At minimum volume (e.g.,
 - Maximum volume: `20.0` blocks
 
 **Damage Multipliers & Values** (At Default Settings)
+
 | Target Entity | Base Multiplier | Min Damage (Threshold) | Max Damage (0dB) | Notes |
 |---|---|---|---|---|
 | **Player** | `0.5x` | **2.0** (❤️x1) | **4.0** (❤️x2) | Reduced friendly fire |
