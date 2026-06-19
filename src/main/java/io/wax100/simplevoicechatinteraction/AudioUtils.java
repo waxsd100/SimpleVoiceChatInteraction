@@ -38,8 +38,9 @@ public final class AudioUtils {
         }
         java.util.Arrays.sort(absSamples);
 
-        // 外れ値（突発的なノイズやデジタルポップ音）を除外してRMSを計算する (トップ5%をカット)
-        int validLength = (int) (pcmData.length * 0.95);
+        // 外れ値（突発的なノイズやデジタルポップ音）のみを除外するため、最上位の数サンプル（約1%）だけカット
+        // ※5%カットだと人間の声のピーク成分まで削られてしまい、全体の音量が下がってしまうため
+        int validLength = pcmData.length - 10;
 
         if (validLength <= 0) {
             return 0.0;
@@ -60,10 +61,12 @@ public final class AudioUtils {
         // dBFS = 20 * log10(rms / 32767)
         double dbfs = 20.0 * Math.log10(rms / Short.MAX_VALUE);
         
-        // デジタル音声の dBFS（-100～0）を、人間が直感的に分かりやすい音圧レベル dB SPL（0～100）に変換する。
-        // READMEの表（100=Max, 60~70=普通, 30以下=無音）に正確に合わせるため、
-        // ダイナミックレンジを広げる係数(1.5)をかけて 100dB を最大値とする。
-        return Math.max(0.0, 100.0 + (dbfs * 1.5));
+        // 人間の声のダイナミックレンジに合わせてスケールを調整
+        // dbfs は通常 -40 〜 -10 程度に収まる。
+        // マイクゲインや声質にもよるが、叫び声(-10dBFS前後)で100に届くように
+        // 係数を 2.0 に引き上げ、ベース値を 120.0 に設定。
+        double scaledDb = 120.0 + (dbfs * 2.0);
+        return Math.min(100.0, Math.max(0.0, scaledDb));
     }
 
 }

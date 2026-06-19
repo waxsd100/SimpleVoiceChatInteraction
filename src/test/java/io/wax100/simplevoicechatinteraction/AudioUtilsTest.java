@@ -100,13 +100,13 @@ class AudioUtilsTest {
         }
 
         /**
-         * 振幅が半分の場合、約-6dBを返すことを確認。
+         * 振幅が半分の場合、100dBを返すことを確認。
          * RMS = MAX_VALUE/2 → 20 * log10(0.5) ≈ -6.02 dB
-         * これはオーディオ工学の基本的な関係: 振幅半分 ≈ -6dB
+         * 新しいスケール: 120 + (-6.02 * 2.0) = 107.96 → 上限の100.0に丸められる
          */
         @Test
-        @DisplayName("半分の音量の場合、約91dBを返す")
-        void 半分の音量の場合約91dBを返す() {
+        @DisplayName("半分の音量の場合、上限の100dBを返す")
+        void 半分の音量の場合上限の100dBを返す() {
             short halfMax = (short) (Short.MAX_VALUE / 2);
             short[] halfVolume = new short[960];
             for (int i = 0; i < halfVolume.length; i++) {
@@ -115,9 +115,8 @@ class AudioUtilsTest {
 
             double result = AudioUtils.calculateDbFromPcm(halfVolume);
 
-            // 100 - (6.02 * 1.5) = 90.97dBに近い値（±0.1の許容誤差）
-            assertEquals(90.97, result, 0.1,
-                    "半分の音量は約91dBを返すべき（オーディオの基本法則 + スケーリング）");
+            assertEquals(100.0, result, 0.01,
+                    "半分の音量はスケーリング後100を超えるため、上限の100.0dBを返すべき");
         }
 
         /**
