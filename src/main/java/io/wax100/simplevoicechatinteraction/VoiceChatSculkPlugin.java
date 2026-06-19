@@ -31,6 +31,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     private final CooldownManager cooldownManager = new CooldownManager();
     private final SculkVibrationEmitter sculkEmitter = new SculkVibrationEmitter();
     private final ShockwaveExecutor shockwaveExecutor = new ShockwaveExecutor();
+    private final java.util.concurrent.ConcurrentHashMap<UUID, OpusDecoder> decoders = new java.util.concurrent.ConcurrentHashMap<>();
 
     private VoicechatApi voicechatApi;
 
@@ -44,6 +45,15 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         this.voicechatApi = api;
         instance = this;
         LOGGER.info("[SimpleVoiceChatInteraction] VoiceChatプラグイン初期化完了");
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    @net.minecraftforge.eventbus.api.SubscribeEvent
+    public void onPlayerLoggedOut(net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
+        OpusDecoder decoder = decoders.remove(event.getEntity().getUUID());
+        if (decoder != null && !decoder.isClosed()) {
+            decoder.close();
+        }
     }
 
     @Override
@@ -60,7 +70,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
 
         if (!Config.groupInteraction && senderConnection.getGroup() != null) return;
 
-        double dB = calculateAudioLevel(event.getPacket().getOpusEncodedData());
+        double dB = calculateAudioLevel(serverPlayer.getUUID(), event.getPacket().getOpusEncodedData());
         if (Double.isInfinite(dB) || Double.isNaN(dB)) return;
 
         processAudioInteraction(serverPlayer, dB, event.getPacket().isWhispering());
@@ -130,17 +140,13 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         }
     }
 
-    private double calculateAudioLevel(byte[] opusData) {
-        if (opusData == null || opusData.length == 0) {
-            return Double.NEGATIVE_INFINITY;
-        }
-        if (voicechatApi == null) {
+    private double calculateAudioLevel(UUID playerUUID, byte[] opusData) {
+        if (opusData == null || opusData.length == 0 || voicechatApi == null) {
             return Double.NEGATIVE_INFINITY;
         }
 
-        OpusDecoder decoder = null;
+        OpusDecoder decoder = decoders.computeIfAbsent(playerUUID, k -> voicechatApi.createDecoder());
         try {
-            decoder = voicechatApi.createDecoder();
             short[] pcmData = decoder.decode(opusData);
             if (pcmData == null || pcmData.length == 0) {
                 return Double.NEGATIVE_INFINITY;
@@ -149,11 +155,12 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             return AudioUtils.calculateDbFromPcm(pcmData);
         } catch (Exception e) {
             LOGGER.warn("[SimpleVoiceChatInteraction] 音声レベルの計算に失敗しました", e);
-            return Double.NEGATIVE_INFINITY;
-        } finally {
-            if (decoder != null && !decoder.isClosed()) {
+            // デコーダーが壊れた可能性があるので再生成のために削除する
+            decoders.remove(playerUUID);
+            if (!decoder.isClosed()) {
                 decoder.close();
             }
+            return Double.NEGATIVE_INFINITY;
         }
     }
 }

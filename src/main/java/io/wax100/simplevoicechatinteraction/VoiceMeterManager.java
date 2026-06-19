@@ -10,14 +10,14 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Simplevoicechatinteraction.MODID)
 public class VoiceMeterManager {
 
-    private static final Map<UUID, MeterData> playerMeters = new HashMap<>();
+    private static final Map<UUID, MeterData> playerMeters = new ConcurrentHashMap<>();
 
     public static class MeterData {
         public ServerBossEvent bossEvent;
@@ -124,8 +124,14 @@ public class VoiceMeterManager {
             // 進捗の計算（Configの最小〜最大値を 0.0 〜 1.0 にマッピング）
             double minDb = Config.meterMinDb;
             double maxDb = Config.meterMaxDb;
-            double progress = (data.currentDb - minDb) / (maxDb - minDb);
-            progress = Math.max(0.0, Math.min(1.0, progress));
+            double range = maxDb - minDb;
+            double progress;
+            if (range <= 0.0) {
+                progress = (data.currentDb >= maxDb) ? 1.0 : 0.0;
+            } else {
+                progress = (data.currentDb - minDb) / range;
+                progress = Math.max(0.0, Math.min(1.0, progress));
+            }
             
             data.bossEvent.setProgress((float) progress);
             

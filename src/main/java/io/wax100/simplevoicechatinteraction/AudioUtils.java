@@ -1,7 +1,6 @@
 package io.wax100.simplevoicechatinteraction;
 
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+
 
 /**
  * Minecraft クラスに依存しない純粋なユーティリティメソッド群。
