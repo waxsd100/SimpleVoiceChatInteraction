@@ -46,7 +46,7 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 
 ### Shockwave Scaling (Radius & Damage)
 
-The shockwave scales dynamically based on voice volume. At minimum volume (e.g., `-10dB`), the multiplier is 1.0x. At maximum volume (`0dB`), it scales up to the max multipliers configured.
+The shockwave scales dynamically based on voice volume. At minimum volume (e.g., `75dB`), the multiplier is 1.0x. At maximum volume (`100dB`), it scales up to the max multipliers configured.
 
 **Radius**
 - Minimum volume: `10.0` blocks
@@ -54,7 +54,7 @@ The shockwave scales dynamically based on voice volume. At minimum volume (e.g.,
 
 **Damage Multipliers & Values** (At Default Settings)
 
-| Target Entity | Base Multiplier | Min Damage (Threshold) | Max Damage (0dB) | Notes |
+| Target Entity | Base Multiplier | Min Damage (Threshold) | Max Damage (100dB) | Notes |
 |---|---|---|---|---|
 | **Player** | `0.5x` | **2.0** (❤️x1) | **4.0** (❤️x2) | Reduced friendly fire |
 | **Normal (Animals, etc)** | `1.0x` | **4.0** (❤️x2) | **8.0** (❤️x4) | Standard damage |
