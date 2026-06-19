@@ -15,7 +15,10 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 - Voice volume is automatically reduced when whispering (Configurable multiplier)
 - Voice volume is automatically reduced while sneaking (Configurable multiplier)
 - Voice volume is automatically amplified while sprinting (Configurable multiplier)
-- Voice testing command (`/voice_debug <dB>`)
+- On-screen Voice Meter (BossBar) that automatically appears in the Deep Dark biome
+- Commands:
+  - `/voice_debug <dB>`: Test voice triggers
+  - `/voice_meter`: Manually toggle the Voice Meter UI
 
 ## Config Values
 

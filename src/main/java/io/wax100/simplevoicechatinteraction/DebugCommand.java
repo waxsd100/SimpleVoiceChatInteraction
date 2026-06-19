@@ -44,5 +44,14 @@ public class DebugCommand {
                         })
                 )
         );
+
+        // 音量メーターの表示/非表示を切り替えるコマンド
+        dispatcher.register(Commands.literal("voice_meter")
+                .executes(context -> {
+                    ServerPlayer player = context.getSource().getPlayerOrException();
+                    VoiceMeterManager.toggleManual(player);
+                    return 1;
+                })
+        );
     }
 }

@@ -100,6 +100,9 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             actualDb += 20.0 * Math.log10(multiplier);
         }
 
+        // ボイスメーターの更新
+        VoiceMeterManager.updateMeter(serverPlayer, actualDb);
+
         UUID playerUUID = serverPlayer.getUUID();
         long now = System.currentTimeMillis();
 
