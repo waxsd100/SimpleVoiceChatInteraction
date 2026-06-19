@@ -98,7 +98,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
 
         if (shockwaveReady && dB >= Config.shockwaveThreshold) {
             cooldownManager.recordShockwaveActivation(playerUUID, now);
-            server.execute(() -> shockwaveExecutor.execute(serverPlayer));
+            server.execute(() -> shockwaveExecutor.execute(serverPlayer, dB));
         }
     }
 

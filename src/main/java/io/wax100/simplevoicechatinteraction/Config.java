@@ -68,16 +68,26 @@ public class Config {
             .defineInRange("shockwave_threshold", -10, -80, 0);
 
     private static final ForgeConfigSpec.DoubleValue SHOCKWAVE_RADIUS = BUILDER
-            .comment("ショックウェーブ効果の半径（ブロック単位）。",
-                    "この半径内のエンティティが影響を受ける。",
-                    "範囲: 1.0～50.0。デフォルト: 10.0")
-            .defineInRange("shockwave_radius", 10.0, 1.0, 50.0);
+            .comment("ショックウェーブ効果の基本半径（ブロック単位）。",
+                    "この範囲内にいるエンティティがダメージと暗闇を受ける。",
+                    "範囲: 1.0～100.0。デフォルト: 10.0")
+            .defineInRange("shockwave_radius", 10.0, 1.0, 100.0);
+
+    private static final ForgeConfigSpec.DoubleValue SHOCKWAVE_MAX_RADIUS_MULTIPLIER = BUILDER
+            .comment("最大音量（0dB）の時のショックウェーブ範囲の倍率。",
+                    "デフォルト: 2.0（閾値ギリギリの時の2倍の範囲になる）")
+            .defineInRange("shockwave_max_radius_multiplier", 2.0, 1.0, 10.0);
 
     private static final ForgeConfigSpec.DoubleValue SHOCKWAVE_DAMAGE = BUILDER
-            .comment("ショックウェーブが周囲のエンティティに与えるダメージ量。",
+            .comment("ショックウェーブが周囲のエンティティに与える基本ダメージ量。",
                     "1.0 = ハート半分。sonic_boomダメージタイプを使用（防具を貫通）。",
                     "範囲: 0.0～100.0。デフォルト: 4.0（ハート2個分）")
             .defineInRange("shockwave_damage", 4.0, 0.0, 100.0);
+
+    private static final ForgeConfigSpec.DoubleValue SHOCKWAVE_MAX_DAMAGE_MULTIPLIER = BUILDER
+            .comment("最大音量（0dB）の時のショックウェーブダメージの倍率。",
+                    "デフォルト: 2.0（閾値ギリギリの時の2倍のダメージになる）")
+            .defineInRange("shockwave_max_damage_multiplier", 2.0, 1.0, 10.0);
 
     private static final ForgeConfigSpec.DoubleValue SHOCKWAVE_PLAYER_DAMAGE_MULTIPLIER = BUILDER
             .comment("プレイヤーに対するショックウェーブのダメージ倍率。",
@@ -122,7 +132,9 @@ public class Config {
     public static volatile boolean shockwaveEnabled;
     public static volatile int shockwaveThreshold;
     public static volatile double shockwaveRadius;
+    public static volatile double shockwaveMaxRadiusMultiplier;
     public static volatile double shockwaveDamage;
+    public static volatile double shockwaveMaxDamageMultiplier;
     public static volatile double shockwavePlayerDamageMultiplier;
     public static volatile double shockwaveMonsterDamageMultiplier;
     public static volatile double shockwaveWardenDamageMultiplier;
@@ -141,7 +153,9 @@ public class Config {
         shockwaveEnabled = SHOCKWAVE_ENABLED.get();
         shockwaveThreshold = SHOCKWAVE_THRESHOLD.get();
         shockwaveRadius = SHOCKWAVE_RADIUS.get();
+        shockwaveMaxRadiusMultiplier = SHOCKWAVE_MAX_RADIUS_MULTIPLIER.get();
         shockwaveDamage = SHOCKWAVE_DAMAGE.get();
+        shockwaveMaxDamageMultiplier = SHOCKWAVE_MAX_DAMAGE_MULTIPLIER.get();
         shockwavePlayerDamageMultiplier = SHOCKWAVE_PLAYER_DAMAGE_MULTIPLIER.get();
         shockwaveMonsterDamageMultiplier = SHOCKWAVE_MONSTER_DAMAGE_MULTIPLIER.get();
         shockwaveWardenDamageMultiplier = SHOCKWAVE_WARDEN_DAMAGE_MULTIPLIER.get();

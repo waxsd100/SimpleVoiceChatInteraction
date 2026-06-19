@@ -29,22 +29,34 @@ public class ShockwaveExecutor {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     /**
-     * ソニックショックウェーブ効果を実行する。
-     * ダメージ、暗闇エフェクト、パーティクル、サウンドを含む。
+     * 発動元プレイヤーを中心にソニックショックウェーブを発生させる。
      * サーバーメインスレッドで呼ぶこと。
      *
      * @param sourcePlayer 発動元プレイヤー
+     * @param dB           音声レベル
      */
-    public void execute(ServerPlayer sourcePlayer) {
+    public void execute(ServerPlayer sourcePlayer, double dB) {
         if (sourcePlayer.isRemoved() || sourcePlayer.hasDisconnected()) return;
 
         ServerLevel level = sourcePlayer.serverLevel();
+        
+        double threshold = Config.shockwaveThreshold;
+        // dBが閾値から0.0（最大）までの間で0.0〜1.0の割合（progress）を計算
+        double progress = 0.0;
+        if (threshold < 0.0) {
+            progress = (dB - threshold) / (0.0 - threshold);
+            progress = Mth.clamp(progress, 0.0, 1.0);
+        }
+
+        double radiusMultiplier = 1.0 + (Config.shockwaveMaxRadiusMultiplier - 1.0) * progress;
+        double damageMultiplier = 1.0 + (Config.shockwaveMaxDamageMultiplier - 1.0) * progress;
+
+        double radius = Config.shockwaveRadius * radiusMultiplier;
+        float damage = (float) (Config.shockwaveDamage * damageMultiplier);
+        int darknessDuration = Config.shockwaveDarknessDuration;
+
         Vec3 center = sourcePlayer.position();
         BlockPos centerBlock = sourcePlayer.blockPosition();
-
-        double radius = Config.shockwaveRadius;
-        float damage = (float) Config.shockwaveDamage;
-        int darknessDuration = Config.shockwaveDarknessDuration;
 
         double radiusSq = radius * radius;
         List<LivingEntity> nearbyEntities = level.getEntitiesOfClass(
