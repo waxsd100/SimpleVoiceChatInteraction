@@ -62,7 +62,8 @@ public class VoiceMeterManager {
 
         // 負荷軽減：40tick(2秒)に1回だけ、古代都市（ディープダークバイオーム）判定を行う
         if (serverPlayer.tickCount % 40 == 0) {
-            boolean inDeepDark = serverPlayer.serverLevel().getBiome(serverPlayer.blockPosition()).is(Biomes.DEEP_DARK);
+            boolean inDeepDark = serverPlayer.serverLevel().getBiome(serverPlayer.blockPosition()).is(Biomes.DEEP_DARK)
+                    || "deeperdarker:otherside".equals(serverPlayer.serverLevel().dimension().location().toString());
             if (inDeepDark) {
                 if (data == null) {
                     data = createAndRegisterMeter(serverPlayer);
