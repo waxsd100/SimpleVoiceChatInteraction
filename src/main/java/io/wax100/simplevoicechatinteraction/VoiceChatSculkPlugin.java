@@ -32,6 +32,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     private final SculkVibrationEmitter sculkEmitter = new SculkVibrationEmitter();
     private final ShockwaveExecutor shockwaveExecutor = new ShockwaveExecutor();
     private final java.util.concurrent.ConcurrentHashMap<UUID, OpusDecoder> decoders = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.ConcurrentHashMap<UUID, Double> emaDbMap = new java.util.concurrent.ConcurrentHashMap<>();
 
     private VoicechatApi voicechatApi;
 
@@ -50,10 +51,12 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
 
     @net.minecraftforge.eventbus.api.SubscribeEvent
     public void onPlayerLoggedOut(net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
-        OpusDecoder decoder = decoders.remove(event.getEntity().getUUID());
+        UUID uuid = event.getEntity().getUUID();
+        OpusDecoder decoder = decoders.remove(uuid);
         if (decoder != null && !decoder.isClosed()) {
             decoder.close();
         }
+        emaDbMap.remove(uuid);
     }
 
     @Override
@@ -156,11 +159,29 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
                 return 0.0;
             }
 
-            return AudioUtils.calculateDbFromPcm(pcmData);
+            double rawDb = AudioUtils.calculateDbFromPcm(pcmData);
+
+            // ホワイトノイズなどの低音量ノイズゲート（30dB未満は無音扱い）
+            if (rawDb < 30.0) {
+                rawDb = 0.0;
+            }
+            
+            final double finalRawDb = rawDb;
+
+            // 指数移動平均 (EMA) を用いて、突発的なポップノイズや外れ値を平滑化する
+            // alpha = 0.35 (数パケットかけて滑らかに音量が変化し、1パケットだけの突発的なスパイクを除去)
+            double alpha = 0.35;
+            double emaDb = emaDbMap.compute(playerUUID, (k, prev) -> {
+                if (prev == null) return finalRawDb;
+                return (alpha * finalRawDb) + ((1.0 - alpha) * prev);
+            });
+
+            return emaDb;
         } catch (Exception e) {
             LOGGER.warn("[SimpleVoiceChatInteraction] 音声レベルの計算に失敗しました", e);
             // デコーダーが壊れた可能性があるので再生成のために削除する
             decoders.remove(playerUUID);
+            emaDbMap.remove(playerUUID);
             if (!decoder.isClosed()) {
                 decoder.close();
             }

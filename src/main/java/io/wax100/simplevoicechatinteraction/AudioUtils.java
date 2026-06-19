@@ -31,12 +31,25 @@ public final class AudioUtils {
             return 0.0;
         }
 
-        // RMS（二乗平均平方根）振幅を計算
-        double sumSquares = 0.0;
-        for (short sample : pcmData) {
-            sumSquares += (double) sample * sample;
+        // 振幅の絶対値を配列にコピーしてソート
+        short[] absSamples = new short[pcmData.length];
+        for (int i = 0; i < pcmData.length; i++) {
+            absSamples[i] = (short) Math.abs(pcmData[i]);
         }
-        double rms = Math.sqrt(sumSquares / pcmData.length);
+        java.util.Arrays.sort(absSamples);
+
+        // 外れ値（突発的なノイズやデジタルポップ音）を除外してRMSを計算する (トップ5%をカット)
+        int validLength = (int) (pcmData.length * 0.95);
+
+        if (validLength <= 0) {
+            return 0.0;
+        }
+
+        double sumSquares = 0.0;
+        for (int i = 0; i < validLength; i++) {
+            sumSquares += (double) absSamples[i] * absSamples[i];
+        }
+        double rms = Math.sqrt(sumSquares / validLength);
 
         // 事実上の無音
         if (rms < 1.0) {
