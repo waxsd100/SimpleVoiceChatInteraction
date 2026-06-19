@@ -8,14 +8,14 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 
 - Talking in voice chat activates sculk sensors
 - Talking in voice chat is detected by the warden
-- Yelling in voice chat unleashes a sonic shockwave that damages nearby entities
+- Yelling in voice chat unleashes a sonic shockwave that damages nearby entities (Restricted to the Deep Dark biome and `deeperdarker:otherside` dimension)
 - Dynamic shockwave radius and damage based on voice volume
 - Bonus damage multipliers against monsters and wardens
 - Optional support for group chat vibrations
 - Voice volume is automatically reduced when whispering (Configurable multiplier)
 - Voice volume is automatically reduced while sneaking (Configurable multiplier)
 - Voice volume is automatically amplified while sprinting (Configurable multiplier)
-- On-screen Voice Meter (BossBar) that automatically appears in the Deep Dark biome
+- On-screen Voice Meter (BossBar) that automatically appears in the Deep Dark biome and `deeperdarker:otherside` dimension
 - Commands:
   - `/voice_debug <dB>`: Test voice triggers
   - `/voice_meter`: Manually toggle the Voice Meter UI
