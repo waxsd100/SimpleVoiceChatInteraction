@@ -61,10 +61,10 @@ The shockwave scales dynamically based on voice volume. At minimum volume (e.g.,
 | **Monster** | `5.0x` | **20.0** (❤️x10) | **40.0** (❤️x20) | Very effective against normal mobs |
 | **Warden** | `10.0x` | **40.0** (❤️x20) | **80.0** (❤️x40) | Extreme damage against the Warden |
 
-### Digital Volume (dB) Reference
+### Voice Volume (dB SPL) Reference
 
-- **0 dB**: Microphone limit (clipping). The sound of yelling directly into the microphone or tapping it.
-- **-10 to -20 dB**: Very loud voice. Shouting in surprise or laughing loudly.
-- **-30 to -40 dB**: Normal conversation level. Relaxed talking on Discord.
-- **-50 to -60 dB**: Quiet sounds/noise. Whispering, keyboard typing, mouse clicks, or background noises.
-- **-70 dB or lower**: Almost silent (e.g., static white noise from the microphone itself).
+- **100 dB**: Microphone limit (clipping). The sound of yelling directly into the microphone or tapping it.
+- **80 to 90 dB**: Very loud voice. Shouting in surprise or laughing loudly.
+- **60 to 70 dB**: Normal conversation level. Relaxed talking on Discord.
+- **40 to 50 dB**: Quiet sounds/noise. Whispering, keyboard typing, mouse clicks, or background noises.
+- **30 dB or lower**: Almost silent (e.g., static white noise from the microphone itself).
