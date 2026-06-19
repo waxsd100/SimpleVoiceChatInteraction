@@ -152,7 +152,7 @@ public class Config {
     public static volatile int shockwaveCooldown;
 
     @SubscribeEvent
-    static void onLoad(final ModConfigEvent event) {
+    public static void onLoad(final ModConfigEvent event) {
         groupInteraction = GROUP_INTERACTION.get();
         whisperVolumeMultiplier = WHISPER_VOLUME_MULTIPLIER.get();
         sneakVolumeMultiplier = SNEAK_VOLUME_MULTIPLIER.get();
