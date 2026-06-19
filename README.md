@@ -37,3 +37,11 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 | `shockwave_warden_damage_multiplier`  | `10.0`        | Damage multiplier against wardens                            |
 | `shockwave_cooldown`                  | `20`          | Cooldown of the shockwave effect in ticks                    |
 | `shockwave_darkness_duration`         | `60`          | Duration of the darkness effect applied to players in ticks  |
+
+### Digital Volume (dB) Reference
+
+- **0 dB**: Microphone limit (clipping). The sound of yelling directly into the microphone or tapping it.
+- **-10 to -20 dB**: Very loud voice. Shouting in surprise or laughing loudly.
+- **-30 to -40 dB**: Normal conversation level. Relaxed talking on Discord.
+- **-50 to -60 dB**: Quiet sounds/noise. Whispering, keyboard typing, mouse clicks, or background noises.
+- **-70 dB or lower**: Almost silent (e.g., static white noise from the microphone itself).
