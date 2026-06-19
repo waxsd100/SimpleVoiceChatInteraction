@@ -13,6 +13,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -56,6 +57,8 @@ public class ShockwaveExecutor {
             float actualDamage = damage;
             if (entity instanceof Player) {
                 actualDamage *= (float) Config.shockwavePlayerDamageMultiplier;
+            } else if (entity instanceof Warden) {
+                actualDamage *= (float) Config.shockwaveWardenDamageMultiplier;
             } else if (entity instanceof Monster) {
                 actualDamage *= (float) Config.shockwaveMonsterDamageMultiplier;
             }

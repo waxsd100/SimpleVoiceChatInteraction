@@ -89,6 +89,11 @@ public class Config {
                     "デフォルト: 5.0（ダメージを5倍に増加して大ダメージ）")
             .defineInRange("shockwave_monster_damage_multiplier", 5.0, 0.0, 100.0);
 
+    private static final ForgeConfigSpec.DoubleValue SHOCKWAVE_WARDEN_DAMAGE_MULTIPLIER = BUILDER
+            .comment("ウォーデンに対するショックウェーブのダメージ倍率。",
+                    "デフォルト: 10.0（ウォーデンに対して超特大ダメージ）")
+            .defineInRange("shockwave_warden_damage_multiplier", 10.0, 0.0, 1000.0);
+
     private static final ForgeConfigSpec.IntValue SHOCKWAVE_DARKNESS_DURATION = BUILDER
             .comment("周囲のプレイヤーに付与される暗闇エフェクトの持続時間（tick単位）。",
                     "20 tick = 1秒。",
@@ -120,6 +125,7 @@ public class Config {
     public static volatile double shockwaveDamage;
     public static volatile double shockwavePlayerDamageMultiplier;
     public static volatile double shockwaveMonsterDamageMultiplier;
+    public static volatile double shockwaveWardenDamageMultiplier;
     public static volatile int shockwaveDarknessDuration;
     public static volatile int shockwaveCooldown;
 
@@ -138,6 +144,7 @@ public class Config {
         shockwaveDamage = SHOCKWAVE_DAMAGE.get();
         shockwavePlayerDamageMultiplier = SHOCKWAVE_PLAYER_DAMAGE_MULTIPLIER.get();
         shockwaveMonsterDamageMultiplier = SHOCKWAVE_MONSTER_DAMAGE_MULTIPLIER.get();
+        shockwaveWardenDamageMultiplier = SHOCKWAVE_WARDEN_DAMAGE_MULTIPLIER.get();
         shockwaveDarknessDuration = SHOCKWAVE_DARKNESS_DURATION.get();
         shockwaveCooldown = SHOCKWAVE_COOLDOWN.get();
     }
