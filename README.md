@@ -38,6 +38,22 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 | `shockwave_cooldown`                  | `20`          | Cooldown of the shockwave effect in ticks                    |
 | `shockwave_darkness_duration`         | `60`          | Duration of the darkness effect applied to players in ticks  |
 
+### Shockwave Scaling (Radius & Damage)
+
+The shockwave scales dynamically based on voice volume. At minimum volume (e.g., `-10dB`), the multiplier is 1.0x. At maximum volume (`0dB`), it scales up to the max multipliers configured.
+
+**Radius**
+- Minimum volume: `10.0` blocks
+- Maximum volume: `20.0` blocks
+
+**Damage Multipliers & Values** (At Default Settings)
+| Target Entity | Base Multiplier | Min Damage (Threshold) | Max Damage (0dB) | Notes |
+|---|---|---|---|---|
+| **Player** | `0.5x` | **2.0** (❤️x1) | **4.0** (❤️x2) | Reduced friendly fire |
+| **Normal (Animals, etc)** | `1.0x` | **4.0** (❤️x2) | **8.0** (❤️x4) | Standard damage |
+| **Monster** | `5.0x` | **20.0** (❤️x10) | **40.0** (❤️x20) | Very effective against normal mobs |
+| **Warden** | `10.0x` | **40.0** (❤️x20) | **80.0** (❤️x40) | Extreme damage against the Warden |
+
 ### Digital Volume (dB) Reference
 
 - **0 dB**: Microphone limit (clipping). The sound of yelling directly into the microphone or tapping it.
