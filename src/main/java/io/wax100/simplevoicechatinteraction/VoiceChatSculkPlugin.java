@@ -159,7 +159,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
                 return 0.0;
             }
 
-            double rawDb = AudioUtils.calculateDbFromPcm(pcmData);
+            double rawDb = AudioUtils.calculateDbFromPcm(pcmData, Config.microphoneBaseValue, Config.microphoneMultiplier);
 
             // ホワイトノイズなどの低音量ノイズゲート（30dB未満は無音扱い）
             if (rawDb < 30.0) {

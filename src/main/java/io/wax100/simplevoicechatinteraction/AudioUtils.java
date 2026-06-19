@@ -26,7 +26,7 @@ public final class AudioUtils {
      * @param pcmData PCMサンプル配列（16ビット符号付き整数）
      * @return 音声レベル（dB）。null/空の場合は {@link Double#NEGATIVE_INFINITY}
      */
-    public static double calculateDbFromPcm(short[] pcmData) {
+    public static double calculateDbFromPcm(short[] pcmData, double baseValue, double multiplier) {
         if (pcmData == null || pcmData.length == 0) {
             return 0.0;
         }
@@ -62,10 +62,8 @@ public final class AudioUtils {
         double dbfs = 20.0 * Math.log10(rms / Short.MAX_VALUE);
         
         // 人間の声のダイナミックレンジに合わせてスケールを調整
-        // dbfs は通常 -40 〜 -10 程度に収まる。
-        // マイクゲインや声質にもよるが、叫び声(-10dBFS前後)で100に届くように
-        // 係数を 2.0 に引き上げ、ベース値を 120.0 に設定。
-        double scaledDb = 120.0 + (dbfs * 2.0);
+        // Configで設定されたベース値（デフォルト120.0）と乗数（デフォルト2.0）を使用する
+        double scaledDb = baseValue + (dbfs * multiplier);
         return Math.min(100.0, Math.max(0.0, scaledDb));
     }
 

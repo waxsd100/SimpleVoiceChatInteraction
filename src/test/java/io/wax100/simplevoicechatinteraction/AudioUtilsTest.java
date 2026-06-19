@@ -47,7 +47,7 @@ class AudioUtilsTest {
             // 全サンプルが0の無音PCMデータ
             short[] silence = new short[960];
 
-            double result = AudioUtils.calculateDbFromPcm(silence);
+            double result = AudioUtils.calculateDbFromPcm(silence, 120.0, 2.0);
 
             assertEquals(0.0, result,
                     "無音データ（全ゼロ）は0.0を返すべき");
@@ -60,7 +60,7 @@ class AudioUtilsTest {
         @Test
         @DisplayName("nullデータの場合、0.0を返す")
         void nullデータの場合0_0を返す() {
-            double result = AudioUtils.calculateDbFromPcm(null);
+            double result = AudioUtils.calculateDbFromPcm(null, 120.0, 2.0);
 
             assertEquals(0.0, result,
                     "nullデータは0.0を返すべき");
@@ -74,7 +74,7 @@ class AudioUtilsTest {
         void 空配列の場合0_0を返す() {
             short[] empty = new short[0];
 
-            double result = AudioUtils.calculateDbFromPcm(empty);
+            double result = AudioUtils.calculateDbFromPcm(empty, 120.0, 2.0);
 
             assertEquals(0.0, result,
                     "空配列は0.0を返すべき");
@@ -92,7 +92,7 @@ class AudioUtilsTest {
                 fullVolume[i] = Short.MAX_VALUE;
             }
 
-            double result = AudioUtils.calculateDbFromPcm(fullVolume);
+            double result = AudioUtils.calculateDbFromPcm(fullVolume, 120.0, 2.0);
 
             // 100dBに非常に近い値（浮動小数点誤差を考慮して±0.01）
             assertEquals(100.0, result, 0.01,
@@ -113,7 +113,7 @@ class AudioUtilsTest {
                 halfVolume[i] = halfMax;
             }
 
-            double result = AudioUtils.calculateDbFromPcm(halfVolume);
+            double result = AudioUtils.calculateDbFromPcm(halfVolume, 120.0, 2.0);
 
             assertEquals(100.0, result, 0.01,
                     "半分の音量はスケーリング後100を超えるため、上限の100.0dBを返すべき");
@@ -131,7 +131,7 @@ class AudioUtilsTest {
             short[] nearSilence = new short[960];
             nearSilence[0] = 1;
 
-            double result = AudioUtils.calculateDbFromPcm(nearSilence);
+            double result = AudioUtils.calculateDbFromPcm(nearSilence, 120.0, 2.0);
 
             assertEquals(0.0, result,
                     "RMS < 1.0 の微小音量は0.0を返すべき");
@@ -152,7 +152,7 @@ class AudioUtilsTest {
                 mediumVolume[i] = sampleValue;
             }
 
-            double dB = AudioUtils.calculateDbFromPcm(mediumVolume);
+            double dB = AudioUtils.calculateDbFromPcm(mediumVolume, 120.0, 2.0);
 
             // dBは0より大きいこと
             assertTrue(dB > 0.0, "中程度の音量のdB値は正であるべき");
@@ -186,8 +186,8 @@ class AudioUtilsTest {
                 negative[i] = -10000;
             }
 
-            double positiveDb = AudioUtils.calculateDbFromPcm(positive);
-            double negativeDb = AudioUtils.calculateDbFromPcm(negative);
+            double positiveDb = AudioUtils.calculateDbFromPcm(positive, 120.0, 2.0);
+            double negativeDb = AudioUtils.calculateDbFromPcm(negative, 120.0, 2.0);
 
             assertEquals(positiveDb, negativeDb, 0.001,
                     "二乗計算により、正負のサンプルは同じdB値を返すべき");

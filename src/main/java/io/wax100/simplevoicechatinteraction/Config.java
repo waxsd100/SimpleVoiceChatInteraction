@@ -21,6 +21,9 @@ public class Config {
     public static final ForgeConfigSpec.DoubleValue SNEAK_VOLUME_MULTIPLIER;
     public static final ForgeConfigSpec.DoubleValue SPRINT_VOLUME_MULTIPLIER;
 
+    public static final ForgeConfigSpec.DoubleValue MICROPHONE_BASE_VALUE;
+    public static final ForgeConfigSpec.DoubleValue MICROPHONE_MULTIPLIER;
+
     public static final ForgeConfigSpec.IntValue VOICE_SCULK_FREQUENCY;
     public static final ForgeConfigSpec.IntValue MINIMUM_ACTIVATION_THRESHOLD;
 
@@ -66,6 +69,20 @@ public class Config {
                         "1.0にするとダッシュによる変化は発生しません。",
                         "範囲: 0.0～10.0。デフォルト: 1.5")
                 .defineInRange("sprint_volume_multiplier", 1.5, 0.0, 10.0);
+        BUILDER.pop();
+
+        BUILDER.push("microphone_scaling");
+        MICROPHONE_BASE_VALUE = BUILDER
+                .comment("マイクから取得した音声レベル（dBFS）をゲーム内の音量（dB SPL）に変換する際のベース値。",
+                        "この値を上げると全体的な音量が底上げされます。",
+                        "範囲: 0.0～200.0。デフォルト: 120.0")
+                .defineInRange("microphone_base_value", 120.0, 0.0, 200.0);
+
+        MICROPHONE_MULTIPLIER = BUILDER
+                .comment("マイクから取得した音声レベル（dBFS）に乗算する係数。",
+                        "マイクの感度が低い場合や、叫んでも100dBに届かない場合はこの値を上げてください。",
+                        "範囲: 0.1～10.0。デフォルト: 2.0")
+                .defineInRange("microphone_multiplier", 2.0, 0.1, 10.0);
         BUILDER.pop();
 
         BUILDER.push("sculk_vibration");
@@ -158,6 +175,10 @@ public class Config {
     public static volatile double sneakVolumeMultiplier;
     public static volatile double sprintVolumeMultiplier;
 
+    // マイク音量スケーリング
+    public static volatile double microphoneBaseValue;
+    public static volatile double microphoneMultiplier;
+
     // スカルク振動
     public static volatile int voiceSculkFrequency;
     public static volatile int minimumActivationThreshold;
@@ -185,6 +206,9 @@ public class Config {
         whisperVolumeMultiplier = WHISPER_VOLUME_MULTIPLIER.get();
         sneakVolumeMultiplier = SNEAK_VOLUME_MULTIPLIER.get();
         sprintVolumeMultiplier = SPRINT_VOLUME_MULTIPLIER.get();
+
+        microphoneBaseValue = MICROPHONE_BASE_VALUE.get();
+        microphoneMultiplier = MICROPHONE_MULTIPLIER.get();
 
         voiceSculkFrequency = VOICE_SCULK_FREQUENCY.get();
         minimumActivationThreshold = MINIMUM_ACTIVATION_THRESHOLD.get();
