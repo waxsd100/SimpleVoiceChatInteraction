@@ -183,14 +183,14 @@ public class Config {
         SHOCKWAVE_RADIUS = BUILDER
                 .comment("---------------------------------------------------------",
                         "ショックウェーブが閾値ギリギリで発動した時の基本半径（ブロック単位）。",
-                        "範囲: 1.0～100.0。デフォルト: 10.0")
-                .defineInRange("shockwave_radius", 10.0, 1.0, 100.0);
+                        "範囲: 0.0～100.0。デフォルト: 0.0（閾値付近では0mからスタート）")
+                .defineInRange("shockwave_radius", 0.0, 0.0, 100.0);
 
         SHOCKWAVE_100DB_RADIUS = BUILDER
                 .comment("---------------------------------------------------------",
                         "100dB（最大の声）の時のショックウェーブ範囲（ブロック単位）。",
-                        "デフォルト: 20.0（閾値の時の2倍）")
-                .defineInRange("shockwave_100db_radius", 20.0, 1.0, 200.0);
+                        "デフォルト: 10.0")
+                .defineInRange("shockwave_100db_radius", 10.0, 0.0, 200.0);
 
         SHOCKWAVE_DAMAGE = BUILDER
                 .comment("---------------------------------------------------------",
