@@ -124,7 +124,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
                 if (entry.getValue().equals(playerUUID)) {
                     ServerPlayer admin = server.getPlayerList().getPlayer(entry.getKey());
                     if (admin != null) {
-                        admin.displayClientMessage(net.minecraft.network.chat.Component.literal("§e[Monitor] §a" + serverPlayer.getScoreboardName() + " §f: " + String.format("%.1f", actualDb) + " dB"), true);
+                        VoiceMeterManager.updateMonitorMeter(admin, serverPlayer.getScoreboardName(), actualDb);
                     }
                 }
             }

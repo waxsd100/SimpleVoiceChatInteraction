@@ -61,6 +61,7 @@ public class DebugCommand {
                     ServerPlayer admin = context.getSource().getPlayerOrException();
                     if (VoiceChatSculkPlugin.instance != null) {
                         VoiceChatSculkPlugin.instance.activeMonitors.remove(admin.getUUID());
+                        VoiceMeterManager.clearMonitorMode(admin);
                         context.getSource().sendSuccess(() -> Component.literal("§a[SVC Monitor] モニタリングを停止しました。"), false);
                     }
                     return 1;
@@ -71,6 +72,7 @@ public class DebugCommand {
                             ServerPlayer target = net.minecraft.commands.arguments.EntityArgument.getPlayer(context, "target");
                             if (VoiceChatSculkPlugin.instance != null) {
                                 VoiceChatSculkPlugin.instance.activeMonitors.put(admin.getUUID(), target.getUUID());
+                                VoiceMeterManager.setMonitorMode(admin, target.getScoreboardName());
                                 context.getSource().sendSuccess(() -> Component.literal("§a[SVC Monitor] " + target.getScoreboardName() + " のマイク音量モニタリングを開始しました。"), false);
                             }
                             return 1;

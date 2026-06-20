@@ -20,7 +20,7 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
   - `/voice_debug <dB>`: Test voice triggers
   - `/voice_meter`: Manually toggle the Voice Meter UI
   - `/voice_reload`: Reloads the configuration file from disk (Requires OP level 2)
-  - `/voice_monitor [player]`: Real-time monitoring of another player's voice volume (dB) in the action bar. Run without arguments to stop monitoring. (Requires OP level 2)
+  - `/voice_monitor [player]`: Real-time monitoring of another player's voice volume (dB) via BossBar. Run without arguments to stop monitoring. (Requires OP level 2)
 
 ## Config Values
 

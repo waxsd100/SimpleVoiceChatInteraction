@@ -26,11 +26,22 @@ public class VoiceMeterManager {
         public double currentDb = 0.0;
         public int lastDisplayedDb = -999;
         public boolean needsUpdate = false;
+        public String monitorTargetName = null;
     }
 
     public static void updateMeter(ServerPlayer player, double dB) {
         MeterData data = playerMeters.computeIfAbsent(player.getUUID(), uuid -> createAndRegisterMeter(player));
+        // もし他プレイヤーをモニター中の場合は、自分自身の音声でメーターを上書きしない
+        if (data.monitorTargetName != null) return;
+        
         data.currentDb = Math.max(data.currentDb, dB); // ピークホールド
+        data.needsUpdate = true;
+    }
+
+    public static void updateMonitorMeter(ServerPlayer admin, String targetName, double dB) {
+        MeterData data = playerMeters.computeIfAbsent(admin.getUUID(), uuid -> createAndRegisterMeter(admin));
+        data.currentDb = Math.max(data.currentDb, dB);
+        data.monitorTargetName = targetName;
         data.needsUpdate = true;
     }
 
@@ -42,6 +53,24 @@ public class VoiceMeterManager {
         player.sendSystemMessage(Component.literal("§a[SVC] 音量メーターを " + (data.manuallyEnabled ? "§eオン" : "§cオフ") + " §aにしました。"));
         updateBossBar(player, data);
         data.needsUpdate = false;
+    }
+
+    public static void setMonitorMode(ServerPlayer admin, String targetName) {
+        MeterData data = playerMeters.computeIfAbsent(admin.getUUID(), uuid -> createAndRegisterMeter(admin));
+        data.monitorTargetName = targetName;
+        data.manuallyEnabled = true; // モニター時は強制的に表示
+        data.needsUpdate = true;
+        updateBossBar(admin, data);
+    }
+
+    public static void clearMonitorMode(ServerPlayer admin) {
+        MeterData data = playerMeters.get(admin.getUUID());
+        if (data != null) {
+            data.monitorTargetName = null;
+            data.lastDisplayedDb = -999; // 次回必ず更新させる
+            data.needsUpdate = true;
+            updateBossBar(admin, data);
+        }
     }
 
     private static MeterData createAndRegisterMeter(ServerPlayer player) {
@@ -135,18 +164,20 @@ public class VoiceMeterManager {
             if (currentDbInt != data.lastDisplayedDb) {
                 data.lastDisplayedDb = currentDbInt;
                 
+                String prefix = data.monitorTargetName != null ? "§a[" + data.monitorTargetName + "] " : "";
+                
                 if (data.currentDb >= Config.shockwaveThreshold) {
                     data.bossEvent.setColor(BossEvent.BossBarColor.PURPLE);
-                    data.bossEvent.setName(Component.literal("§5Voice Volume: " + currentDbInt + " dB (SHOCKWAVE)"));
+                    data.bossEvent.setName(Component.literal(prefix + "§5Voice Volume: " + currentDbInt + " dB (SHOCKWAVE)"));
                 } else if (data.currentDb >= 80.0) {
                     data.bossEvent.setColor(BossEvent.BossBarColor.RED);
-                    data.bossEvent.setName(Component.literal("§cVoice Volume: " + currentDbInt + " dB"));
+                    data.bossEvent.setName(Component.literal(prefix + "§cVoice Volume: " + currentDbInt + " dB"));
                 } else if (data.currentDb >= Config.minimumActivationThreshold) {
                     data.bossEvent.setColor(BossEvent.BossBarColor.YELLOW);
-                    data.bossEvent.setName(Component.literal("§eVoice Volume: " + currentDbInt + " dB"));
+                    data.bossEvent.setName(Component.literal(prefix + "§eVoice Volume: " + currentDbInt + " dB"));
                 } else {
                     data.bossEvent.setColor(BossEvent.BossBarColor.BLUE);
-                    data.bossEvent.setName(Component.literal("§bVoice Volume: " + currentDbInt + " dB"));
+                    data.bossEvent.setName(Component.literal(prefix + "§bVoice Volume: " + currentDbInt + " dB"));
                 }
             }
         } else {
