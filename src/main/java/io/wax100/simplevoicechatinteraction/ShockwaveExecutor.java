@@ -224,12 +224,6 @@ public class ShockwaveExecutor {
         level.playSound(null, soundPos, SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.PLAYERS, 1.2F, 0.6F);
         // ソニックブーム音（ウォーデン固有の音）
         level.playSound(null, soundPos, SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.5F, 0.5F);
-        // ゾンビがドアを砕く音（空気が引き裂かれるような破壊音）
-        level.playSound(null, soundPos, SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR, SoundSource.PLAYERS, 0.7F, 0.3F);
-        // ラヴェジャーの咆哮（獣の厚い感触の叫び）
-        level.playSound(null, soundPos, SoundEvents.RAVAGER_ROAR, SoundSource.PLAYERS, 0.6F, 0.4F);
-        // 金床の衝撃音（重厚な金属的打撃感）
-        level.playSound(null, soundPos, SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 0.5F, 0.3F);
 
         // ビームの到達地点で雷鳴 + ドラゴンの唸り（遠くまで響く威圧感）
         Vec3 impactPos = eyePos.add(direction.scale(beamLength));
