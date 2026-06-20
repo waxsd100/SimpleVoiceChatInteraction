@@ -139,7 +139,8 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         if (shockwaveReady && actualDb >= Config.shockwaveThreshold) {
             boolean inDeepDark = serverPlayer.serverLevel().getBiome(serverPlayer.blockPosition()).is(net.minecraft.world.level.biome.Biomes.DEEP_DARK)
                     || "deeperdarker:otherside".equals(serverPlayer.serverLevel().dimension().location().toString());
-            if (inDeepDark) {
+            
+            if (!Config.shockwaveRequireDeepDark || inDeepDark) {
                 cooldownManager.recordShockwaveActivation(playerUUID, now);
                 final double finalDb = actualDb;
                 server.execute(() -> shockwaveExecutor.execute(serverPlayer, finalDb));

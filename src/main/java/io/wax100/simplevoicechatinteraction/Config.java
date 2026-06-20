@@ -28,6 +28,7 @@ public class Config {
     public static final ForgeConfigSpec.IntValue MINIMUM_ACTIVATION_THRESHOLD;
 
     public static final ForgeConfigSpec.BooleanValue SHOCKWAVE_ENABLED;
+    public static final ForgeConfigSpec.BooleanValue SHOCKWAVE_REQUIRE_DEEP_DARK;
     public static final ForgeConfigSpec.IntValue SHOCKWAVE_THRESHOLD;
     public static final ForgeConfigSpec.DoubleValue SHOCKWAVE_RADIUS;
     public static final ForgeConfigSpec.DoubleValue SHOCKWAVE_MAX_RADIUS_MULTIPLIER;
@@ -109,6 +110,12 @@ public class Config {
                         "デフォルト: true")
                 .define("shockwave_enabled", true);
 
+        SHOCKWAVE_REQUIRE_DEEP_DARK = BUILDER
+                .comment("ショックウェーブの発動をディープダークバイオーム（または otherside ディメンション）に限定する。",
+                        "falseに設定すると、地上やネザーなど「どこでも」発動できるようになります。",
+                        "デフォルト: true")
+                .define("shockwave_require_deep_dark", true);
+
         SHOCKWAVE_THRESHOLD = BUILDER
                 .comment("ショックウェーブ効果を発動するためのオーディオレベル閾値（dB SPL相当）。",
                         "通常はminimum_activation_thresholdより高い値（大きい音量）に設定すべき。",
@@ -185,6 +192,7 @@ public class Config {
 
     // ショックウェーブ
     public static volatile boolean shockwaveEnabled;
+    public static volatile boolean shockwaveRequireDeepDark;
     public static volatile int shockwaveThreshold;
     public static volatile double shockwaveRadius;
     public static volatile double shockwaveMaxRadiusMultiplier;
@@ -214,6 +222,7 @@ public class Config {
         minimumActivationThreshold = MINIMUM_ACTIVATION_THRESHOLD.get();
 
         shockwaveEnabled = SHOCKWAVE_ENABLED.get();
+        shockwaveRequireDeepDark = SHOCKWAVE_REQUIRE_DEEP_DARK.get();
         shockwaveThreshold = SHOCKWAVE_THRESHOLD.get();
         shockwaveRadius = SHOCKWAVE_RADIUS.get();
         shockwaveMaxRadiusMultiplier = SHOCKWAVE_MAX_RADIUS_MULTIPLIER.get();

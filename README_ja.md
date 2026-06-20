@@ -36,9 +36,12 @@
 | `whisper_volume_multiplier`           | `0.5`         | 囁き声の音量倍率（0.5で半減＝約-6dB相当）                |
 | `sneak_volume_multiplier`             | `0.5`         | スニーク中の声の音量倍率（0.5で半減＝約-6dB相当）        |
 | `sprint_volume_multiplier`            | `1.5`         | ダッシュ中の声の音量倍率（1.5で増幅＝約+3.5dB相当）      |
+| `microphone_base_value`               | `120.0`       | マイク音量スケーリングのベース値（全体音量の底上げ）     |
+| `microphone_multiplier`               | `2.0`         | マイク音量スケーリングの倍率（100dBへの到達しやすさ）    |
 | `voice_sculk_frequency`               | `7`           | 声の振動に対するスカルクセンサーの周波数(1〜15)          |
 | `minimum_activation_threshold`        | `50`          | スカルク振動を作動させる最小音圧レベル(dB SPL)           |
 | `shockwave_enabled`                   | `true`        | ショックウェーブ効果を有効にするかどうか                 |
+| `shockwave_require_deep_dark`         | `true`        | ショックウェーブの発動をディープダーク限定にするかどうか |
 | `shockwave_threshold`                 | `100`         | ショックウェーブを発動する最小音圧レベル(dB SPL)         |
 | `shockwave_radius`                    | `10.0`        | ショックウェーブの基本範囲（ブロック単位）               |
 | `shockwave_max_radius_multiplier`     | `2.0`         | 最大音量(100dB)時の範囲倍率                              |

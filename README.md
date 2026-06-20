@@ -28,12 +28,15 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 | Name                                  | Default Value | Description                                                  |
 |---------------------------------------|---------------|--------------------------------------------------------------|
 | `group_interaction`                   | `true`        | If talking in groups should trigger vibrations               |
-| `whisper_volume_multiplier`           | `0.5`         | Voice volume multiplier while whispering (0.5 = approx -6dB) |
-| `sneak_volume_multiplier`             | `0.5`         | Voice volume multiplier while sneaking (0.5 = approx -6dB)   |
-| `sprint_volume_multiplier`            | `1.5`         | Voice volume multiplier while sprinting (1.5 = approx +3.5dB)|
+| `whisper_volume_multiplier`           | `0.5`         | Volume multiplier when whispering (0.5 = approx -6dB)        |
+| `sneak_volume_multiplier`             | `0.5`         | Volume multiplier when sneaking (0.5 = approx -6dB)          |
+| `sprint_volume_multiplier`            | `1.5`         | Volume multiplier when sprinting (1.5 = approx +3.5dB)       |
+| `microphone_base_value`               | `120.0`       | Base value for audio scaling. Adjust to shift overall volume |
+| `microphone_multiplier`               | `2.0`         | Multiplier for audio scaling. Adjust if 100dB is hard to hit |
 | `voice_sculk_frequency`               | `7`           | The sculk sensor frequency emitted by voice (1-15)           |
 | `minimum_activation_threshold`        | `50`          | Minimum audio level to activate sculk (dB SPL)               |
 | `shockwave_enabled`                   | `true`        | Whether the shockwave effect is enabled                      |
+| `shockwave_require_deep_dark`         | `true`        | Whether the shockwave is restricted to the Deep Dark         |
 | `shockwave_threshold`                 | `100`         | Audio level required to trigger a shockwave (dB SPL)         |
 | `shockwave_radius`                    | `10.0`        | Base radius of the shockwave effect                          |
 | `shockwave_max_radius_multiplier`     | `2.0`         | Max radius multiplier at maximum volume (100dB)              |
