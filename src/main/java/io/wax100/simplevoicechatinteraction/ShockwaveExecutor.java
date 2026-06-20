@@ -218,18 +218,8 @@ public class ShockwaveExecutor {
      * プレイヤーの視線方向にソニックブームパーティクルを連続発射する。
      */
     private void spawnBeamEffects(ServerLevel level, Vec3 eyePos, Vec3 direction, double beamLength) {
-        BlockPos soundPos = BlockPos.containing(eyePos);
-
-        // ソニックチャージ音（ウォーデンの溜め音）
-        level.playSound(null, soundPos, SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.PLAYERS, 1.2F, 0.6F);
         // ソニックブーム音（ウォーデン固有の音）
-        level.playSound(null, soundPos, SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.5F, 0.5F);
-
-        // ビームの到達地点で雷鳴 + ドラゴンの唸り（遠くまで響く威圧感）
-        Vec3 impactPos = eyePos.add(direction.scale(beamLength));
-        BlockPos impactBlockPos = BlockPos.containing(impactPos);
-        level.playSound(null, impactBlockPos, SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.PLAYERS, 0.8F, 0.3F);
-        level.playSound(null, impactBlockPos, SoundEvents.ENDER_DRAGON_GROWL, SoundSource.PLAYERS, 0.4F, 0.5F);
+        level.playSound(null, BlockPos.containing(eyePos), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.5F, 0.5F);
 
         // ビーム沿いにソニックブームパーティクルを配置
         for (double dist = 1.0; dist <= beamLength; dist += 3.0) {
