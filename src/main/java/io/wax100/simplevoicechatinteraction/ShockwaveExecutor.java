@@ -16,17 +16,29 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * ショックウェーブ実行クラス。
+ * <p>
+ * 2段階の攻撃を行う:
+ * <ol>
+ *   <li>周囲全方位への衝撃波（従来の円形AoE）</li>
+ *   <li>プレイヤーの視線方向へのソニックビーム（ウォーデン風の指向性攻撃）</li>
+ * </ol>
  */
 public class ShockwaveExecutor {
 
     private static final Logger LOGGER = LogUtils.getLogger();
+
+    /** ソニックビームの当たり判定の幅（ブロック単位） */
+    private static final double BEAM_WIDTH = 2.0;
 
     /**
      * 発動元プレイヤーを中心にソニックショックウェーブを発生させる。
@@ -58,6 +70,9 @@ public class ShockwaveExecutor {
         Vec3 center = sourcePlayer.position();
         BlockPos centerBlock = sourcePlayer.blockPosition();
 
+        // ── フェーズ1: 周囲全方位への衝撃波（円形AoE） ──
+        Set<Integer> hitEntityIds = new HashSet<>();
+
         double radiusSq = radius * radius;
         List<LivingEntity> nearbyEntities = level.getEntitiesOfClass(
                 LivingEntity.class,
@@ -66,39 +81,96 @@ public class ShockwaveExecutor {
         );
 
         for (LivingEntity entity : nearbyEntities) {
-            float actualDamage = damage;
-            if (entity instanceof Player) {
-                actualDamage *= (float) Config.shockwavePlayerDamageMultiplier;
-            } else if (entity instanceof Warden) {
-                actualDamage *= (float) Config.shockwaveWardenDamageMultiplier;
-            } else if (entity instanceof Monster) {
-                actualDamage *= (float) Config.shockwaveMonsterDamageMultiplier;
-            }
+            applyDamageAndEffects(level, sourcePlayer, entity, damage, darknessDuration);
+            hitEntityIds.add(entity.getId());
+        }
 
-            if (actualDamage > 0.0F) {
-                entity.hurt(level.damageSources().sonicBoom(sourcePlayer), actualDamage);
-            }
+        spawnRadialEffects(level, center, centerBlock, radius);
 
-            if (darknessDuration > 0 && entity instanceof ServerPlayer targetPlayer) {
-                targetPlayer.addEffect(new MobEffectInstance(
-                        MobEffects.DARKNESS, darknessDuration, 0, false, false, true
-                ));
+        // ── フェーズ2: 前方へのソニックビーム（ウォーデン風） ──
+        double beamLength = radius * 1.5; // ビームの射程は周囲ショックウェーブより少し長い
+        Vec3 lookDir = sourcePlayer.getLookAngle();
+        Vec3 eyePos = sourcePlayer.getEyePosition();
+
+        // ビームの到達範囲をAABBで大まかにフィルタ
+        Vec3 beamEnd = eyePos.add(lookDir.scale(beamLength));
+        AABB beamBounds = new AABB(eyePos, beamEnd).inflate(BEAM_WIDTH);
+
+        List<LivingEntity> beamCandidates = level.getEntitiesOfClass(
+                LivingEntity.class,
+                beamBounds,
+                e -> e != sourcePlayer && !hitEntityIds.contains(e.getId())
+        );
+
+        for (LivingEntity entity : beamCandidates) {
+            // エンティティがビーム（円柱）の中にいるか判定
+            if (isInBeamCylinder(eyePos, lookDir, beamLength, entity.position().add(0, entity.getBbHeight() / 2.0, 0))) {
+                applyDamageAndEffects(level, sourcePlayer, entity, damage, darknessDuration);
             }
         }
 
-        spawnShockwaveEffects(level, center, centerBlock, radius);
+        spawnBeamEffects(level, eyePos, lookDir, beamLength);
 
-        LOGGER.debug("[SimpleVoiceChatInteraction] ショックウェーブ発動: {} 位置={} 半径={} ヒット数={}",
-                sourcePlayer.getName().getString(), centerBlock, radius, nearbyEntities.size());
+        int totalHits = hitEntityIds.size() + (int) beamCandidates.stream()
+                .filter(e -> isInBeamCylinder(eyePos, lookDir, beamLength, e.position().add(0, e.getBbHeight() / 2.0, 0)))
+                .count();
+
+        LOGGER.debug("[SimpleVoiceChatInteraction] ショックウェーブ発動: {} 位置={} 半径={} ビーム長={} ヒット数={}",
+                sourcePlayer.getName().getString(), centerBlock, radius, beamLength, totalHits);
     }
 
-    private void spawnShockwaveEffects(ServerLevel level, Vec3 center, BlockPos centerBlock, double radius) {
-        level.playSound(null, centerBlock, SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.5F, 0.5F);
-        level.playSound(null, centerBlock, SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 0.8F, 0.4F);
+    /**
+     * エンティティにダメージと暗闇エフェクトを適用する。
+     */
+    private void applyDamageAndEffects(ServerLevel level, ServerPlayer sourcePlayer,
+                                        LivingEntity entity, float baseDamage, int darknessDuration) {
+        float actualDamage = baseDamage;
+        if (entity instanceof Player) {
+            actualDamage *= (float) Config.shockwavePlayerDamageMultiplier;
+        } else if (entity instanceof Warden) {
+            actualDamage *= (float) Config.shockwaveWardenDamageMultiplier;
+        } else if (entity instanceof Monster) {
+            actualDamage *= (float) Config.shockwaveMonsterDamageMultiplier;
+        }
 
-        level.sendParticles(ParticleTypes.SONIC_BOOM,
-                center.x, center.y + 1.0, center.z,
-                1, 0.0, 0.0, 0.0, 0.0);
+        if (actualDamage > 0.0F) {
+            entity.hurt(level.damageSources().sonicBoom(sourcePlayer), actualDamage);
+        }
+
+        if (darknessDuration > 0 && entity instanceof ServerPlayer targetPlayer) {
+            targetPlayer.addEffect(new MobEffectInstance(
+                    MobEffects.DARKNESS, darknessDuration, 0, false, false, true
+            ));
+        }
+    }
+
+    /**
+     * 指定した点がビームの円柱（シリンダー）の中にあるかを判定する。
+     *
+     * @param origin    ビームの始点（プレイヤーの目の位置）
+     * @param direction ビームの方向（正規化済み）
+     * @param length    ビームの長さ
+     * @param point     判定対象の点
+     * @return 円柱内にある場合 true
+     */
+    private boolean isInBeamCylinder(Vec3 origin, Vec3 direction, double length, Vec3 point) {
+        Vec3 toPoint = point.subtract(origin);
+        // ビーム軸方向への射影距離
+        double projectedDistance = toPoint.dot(direction);
+        if (projectedDistance < 0.0 || projectedDistance > length) {
+            return false; // ビームの前後範囲外
+        }
+        // ビーム軸からの垂直距離の二乗
+        Vec3 closestOnBeam = origin.add(direction.scale(projectedDistance));
+        double perpendicularDistSq = point.distanceToSqr(closestOnBeam);
+        return perpendicularDistSq <= BEAM_WIDTH * BEAM_WIDTH;
+    }
+
+    /**
+     * 周囲全方位ショックウェーブのパーティクル・サウンドエフェクト。
+     */
+    private void spawnRadialEffects(ServerLevel level, Vec3 center, BlockPos centerBlock, double radius) {
+        level.playSound(null, centerBlock, SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 0.8F, 0.4F);
 
         level.sendParticles(ParticleTypes.EXPLOSION,
                 center.x, center.y + 1.0, center.z,
@@ -125,11 +197,7 @@ public class ShockwaveExecutor {
                     level.sendParticles(
                             new BlockParticleOption(ParticleTypes.BLOCK, groundBlock),
                             x, groundY + 0.1, z,
-                            2,
-                            0.05,
-                            0.3,
-                            0.05,
-                            0.05
+                            2, 0.05, 0.3, 0.05, 0.05
                     );
                 }
             }
@@ -139,4 +207,30 @@ public class ShockwaveExecutor {
                 center.x, center.y + 0.1, center.z,
                 10, radius * 0.5, 0.05, radius * 0.5, 0.01);
     }
+
+    /**
+     * ウォーデン風ソニックビームのパーティクル・サウンドエフェクト。
+     * プレイヤーの視線方向にソニックブームパーティクルを連続発射する。
+     */
+    private void spawnBeamEffects(ServerLevel level, Vec3 eyePos, Vec3 direction, double beamLength) {
+        // ソニックブーム音（ウォーデン固有の音）
+        level.playSound(null, BlockPos.containing(eyePos), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.5F, 0.5F);
+
+        // ビーム沿いにソニックブームパーティクルを配置
+        for (double dist = 1.0; dist <= beamLength; dist += 3.0) {
+            Vec3 pos = eyePos.add(direction.scale(dist));
+            level.sendParticles(ParticleTypes.SONIC_BOOM,
+                    pos.x, pos.y, pos.z,
+                    1, 0.0, 0.0, 0.0, 0.0);
+        }
+
+        // ビーム沿いに煙パーティクルを散らす（軌道の可視化）
+        for (double dist = 0.5; dist <= beamLength; dist += 1.5) {
+            Vec3 pos = eyePos.add(direction.scale(dist));
+            level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
+                    pos.x, pos.y, pos.z,
+                    2, 0.15, 0.15, 0.15, 0.01);
+        }
+    }
 }
+
