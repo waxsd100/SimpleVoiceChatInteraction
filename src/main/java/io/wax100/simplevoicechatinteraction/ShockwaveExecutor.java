@@ -37,13 +37,21 @@ public class ShockwaveExecutor {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    /** ソニックビームの当たり判定の幅（ブロック単位） */
+    /**
+     * ソニックビームの当たり判定の幅（ブロック単位）
+     */
     private static final double BEAM_WIDTH = 2.0;
-    /** 周囲AoEの縮小倍率（配置半径に対する比率） */
+    /**
+     * 周囲AoEの縮小倍率（配置半径に対する比率）
+     */
     private static final double RADIAL_RADIUS_SCALE = 0.5;
-    /** ビーム射程の延長倍率（配置半径に対する比率） */
+    /**
+     * ビーム射程の延長倍率（配置半径に対する比率）
+     */
     private static final double BEAM_LENGTH_SCALE = 3.0;
-    /** ビームダメージの倍率（周囲AoEダメージに対する比率） */
+    /**
+     * ビームダメージの倍率（周囲AoEダメージに対する比率）
+     */
     private static final float BEAM_DAMAGE_MULTIPLIER = 1.5F;
 
     /**
@@ -57,9 +65,9 @@ public class ShockwaveExecutor {
         if (sourcePlayer.isRemoved() || sourcePlayer.hasDisconnected()) return;
 
         ServerLevel level = sourcePlayer.serverLevel();
-        
+
         double threshold = Config.shockwaveThreshold;
-        
+
         // 閾値〜100dB までのプログレス (0.0 〜 1.0)
         double progressTo100 = 0.0;
         double referenceDb = 100.0;
@@ -170,7 +178,7 @@ public class ShockwaveExecutor {
      * エンティティにダメージと暗闇エフェクトを適用する。
      */
     private void applyDamageAndEffects(ServerLevel level, ServerPlayer sourcePlayer,
-                                        LivingEntity entity, float baseDamage, int darknessDuration) {
+                                       LivingEntity entity, float baseDamage, int darknessDuration) {
         float actualDamage = baseDamage;
         if (entity instanceof Player) {
             actualDamage *= (float) Config.shockwavePlayerDamageMultiplier;

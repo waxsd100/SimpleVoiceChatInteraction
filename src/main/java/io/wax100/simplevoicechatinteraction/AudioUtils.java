@@ -1,7 +1,6 @@
 package io.wax100.simplevoicechatinteraction;
 
 
-
 /**
  * Minecraft クラスに依存しない純粋なユーティリティメソッド群。
  * <p>
@@ -10,13 +9,12 @@ package io.wax100.simplevoicechatinteraction;
  */
 public final class AudioUtils {
 
-    private AudioUtils() {
-        // ユーティリティクラスのためインスタンス化不可
-    }
-
     // フィルタ用の定数 (サンプリングレート 48000Hz 前提)
     private static final double ALPHA_LP = 0.281; // Low-pass at 3000 Hz
     private static final double ALPHA_HP = 0.962; // High-pass at 300 Hz
+    private AudioUtils() {
+        // ユーティリティクラスのためインスタンス化不可
+    }
 
     /**
      * PCM（パルス符号変調）サンプル配列から音声レベル（dB）を計算する。
@@ -50,9 +48,9 @@ public final class AudioUtils {
                 double y_hp = ALPHA_HP * (prevY_HP + x - prevX);
                 // Low-pass filter (カットオフ約3000Hz)
                 double y_lp = prevY_LP + ALPHA_LP * (y_hp - prevY_LP);
-                
+
                 processedSamples[i] = y_lp;
-                
+
                 if (i > 0) {
                     if ((processedSamples[i - 1] > 0 && processedSamples[i] <= 0) || (processedSamples[i - 1] < 0 && processedSamples[i] >= 0)) {
                         zeroCrossings++;
@@ -107,7 +105,7 @@ public final class AudioUtils {
         // フルスケール基準のdBに変換
         // dBFS = 20 * log10(rms / 32767)
         double dbfs = 20.0 * Math.log10(rms / Short.MAX_VALUE);
-        
+
         // 人間の声のダイナミックレンジに合わせてスケールを調整
         // Configで設定されたベース値と乗数を使用する
         double scaledDb = baseValue + (dbfs * multiplier);

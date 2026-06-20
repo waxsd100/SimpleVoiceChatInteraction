@@ -14,21 +14,16 @@ import net.minecraftforge.fml.event.config.ModConfigEvent;
 @Mod.EventBusSubscriber(modid = SimpleVoiceChatInteraction.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class Config {
 
-    private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
-
     public static final ForgeConfigSpec.BooleanValue GROUP_INTERACTION;
     public static final ForgeConfigSpec.DoubleValue WHISPER_VOLUME_MULTIPLIER;
     public static final ForgeConfigSpec.DoubleValue SNEAK_VOLUME_MULTIPLIER;
     public static final ForgeConfigSpec.DoubleValue SPRINT_VOLUME_MULTIPLIER;
-
     public static final ForgeConfigSpec.DoubleValue MICROPHONE_BASE_VALUE;
     public static final ForgeConfigSpec.DoubleValue MICROPHONE_MULTIPLIER;
     public static final ForgeConfigSpec.DoubleValue NOISE_GATE_THRESHOLD;
     public static final ForgeConfigSpec.BooleanValue ADVANCED_NOISE_FILTERING;
-
     public static final ForgeConfigSpec.IntValue VOICE_SCULK_FREQUENCY;
     public static final ForgeConfigSpec.IntValue MINIMUM_ACTIVATION_THRESHOLD;
-
     public static final ForgeConfigSpec.BooleanValue SHOCKWAVE_ENABLED;
     public static final ForgeConfigSpec.BooleanValue SHOCKWAVE_REQUIRE_DEEP_DARK;
     public static final ForgeConfigSpec.IntValue SHOCKWAVE_THRESHOLD;
@@ -44,8 +39,39 @@ public class Config {
     public static final ForgeConfigSpec.DoubleValue SHOCKWAVE_OVERDRIVE_MULTIPLIER;
     public static final ForgeConfigSpec.IntValue SHOCKWAVE_DARKNESS_DURATION;
     public static final ForgeConfigSpec.IntValue SHOCKWAVE_COOLDOWN;
-
     static final ForgeConfigSpec SPEC;
+    private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
+    // インタラクションフィルター
+    public static volatile boolean groupInteraction;
+
+    // ── キャッシュ済み設定値（スレッド間アクセスのためvolatile） ──────────
+    public static volatile double whisperVolumeMultiplier;
+    public static volatile double sneakVolumeMultiplier;
+    public static volatile double sprintVolumeMultiplier;
+    // マイク音量スケーリング
+    public static volatile double microphoneBaseValue;
+    public static volatile double microphoneMultiplier;
+    public static volatile double noiseGateThreshold;
+    public static volatile boolean advancedNoiseFiltering;
+    // スカルク振動
+    public static volatile int voiceSculkFrequency;
+    public static volatile int minimumActivationThreshold;
+    // ショックウェーブ
+    public static volatile boolean shockwaveEnabled;
+    public static volatile boolean shockwaveRequireDeepDark;
+    public static volatile int shockwaveThreshold;
+    public static volatile double shockwaveRadius;
+    public static volatile double shockwave100dbRadius;
+    public static volatile double shockwaveDamage;
+    public static volatile double shockwave100dbDamage;
+    public static volatile double shockwavePlayerDamageMultiplier;
+    public static volatile double shockwaveMonsterDamageMultiplier;
+    public static volatile double shockwaveWardenDamageMultiplier;
+    public static volatile double shockwaveKnockbackHorizontal;
+    public static volatile double shockwaveKnockbackVertical;
+    public static volatile double shockwaveOverdriveMultiplier;
+    public static volatile int shockwaveDarknessDuration;
+    public static volatile int shockwaveCooldown;
 
     static {
         BUILDER.push("interaction_filters");
@@ -231,41 +257,6 @@ public class Config {
 
         SPEC = BUILDER.build();
     }
-
-    // ── キャッシュ済み設定値（スレッド間アクセスのためvolatile） ──────────
-
-    // インタラクションフィルター
-    public static volatile boolean groupInteraction;
-    public static volatile double whisperVolumeMultiplier;
-    public static volatile double sneakVolumeMultiplier;
-    public static volatile double sprintVolumeMultiplier;
-
-    // マイク音量スケーリング
-    public static volatile double microphoneBaseValue;
-    public static volatile double microphoneMultiplier;
-    public static volatile double noiseGateThreshold;
-    public static volatile boolean advancedNoiseFiltering;
-
-    // スカルク振動
-    public static volatile int voiceSculkFrequency;
-    public static volatile int minimumActivationThreshold;
-
-    // ショックウェーブ
-    public static volatile boolean shockwaveEnabled;
-    public static volatile boolean shockwaveRequireDeepDark;
-    public static volatile int shockwaveThreshold;
-    public static volatile double shockwaveRadius;
-    public static volatile double shockwave100dbRadius;
-    public static volatile double shockwaveDamage;
-    public static volatile double shockwave100dbDamage;
-    public static volatile double shockwavePlayerDamageMultiplier;
-    public static volatile double shockwaveMonsterDamageMultiplier;
-    public static volatile double shockwaveWardenDamageMultiplier;
-    public static volatile double shockwaveKnockbackHorizontal;
-    public static volatile double shockwaveKnockbackVertical;
-    public static volatile double shockwaveOverdriveMultiplier;
-    public static volatile int shockwaveDarknessDuration;
-    public static volatile int shockwaveCooldown;
 
     @SubscribeEvent
     static void onLoad(final ModConfigEvent event) {

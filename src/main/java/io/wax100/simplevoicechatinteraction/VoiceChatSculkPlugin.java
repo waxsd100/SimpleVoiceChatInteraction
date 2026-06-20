@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Simple Voice Chat API プラグイン。
  * プレイヤーの発話を検知し、スカルク振動やソニックショックウェーブを発生させる。
- * 
+ * <p>
  * オーケストレーターとして機能し、実際の処理は各コンポーネントに委譲する。
  */
 @ForgeVoicechatPlugin
@@ -31,7 +31,9 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    /** デバッグコマンド等からアクセスするためのシングルトンインスタンス */
+    /**
+     * デバッグコマンド等からアクセスするためのシングルトンインスタンス
+     */
     public static volatile VoiceChatSculkPlugin instance;
 
     private final CooldownManager cooldownManager = new CooldownManager();
@@ -42,6 +44,18 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     private final ConcurrentHashMap<UUID, UUID> activeMonitors = new ConcurrentHashMap<>();
 
     private volatile VoicechatApi voicechatApi;
+
+    /**
+     * プレイヤーがディープダークバイオームまたは otherside ディメンションにいるかを判定する。
+     * サーバーメインスレッドで呼ぶこと。
+     *
+     * @param player 判定対象のプレイヤー
+     * @return ディープダークまたは otherside にいる場合 true
+     */
+    public static boolean isInDeepDark(ServerPlayer player) {
+        return player.serverLevel().getBiome(player.blockPosition()).is(Biomes.DEEP_DARK)
+                || "deeperdarker:otherside".equals(player.serverLevel().dimension().location().toString());
+    }
 
     @Override
     public String getPluginId() {
@@ -65,6 +79,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
 
     /**
      * モニターマップへのアクセサ。
+     *
      * @return activeMonitors マップ
      */
     public ConcurrentHashMap<UUID, UUID> getActiveMonitors() {
@@ -114,7 +129,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
      */
     public void processAudioInteraction(ServerPlayer serverPlayer, double dB, boolean isWhispering) {
         if (serverPlayer.isRemoved() || serverPlayer.hasDisconnected()) return;
-        
+
         double actualDb = dB;
         if (isWhispering) {
             double multiplier = Config.whisperVolumeMultiplier;
@@ -204,7 +219,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             if (rawDb < Config.noiseGateThreshold) {
                 rawDb = 0.0;
             }
-            
+
             final double finalRawDb = rawDb;
 
             // 指数移動平均 (EMA) を用いて、突発的なポップノイズや外れ値を平滑化する
@@ -226,17 +241,5 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             }
             return 0.0;
         }
-    }
-
-    /**
-     * プレイヤーがディープダークバイオームまたは otherside ディメンションにいるかを判定する。
-     * サーバーメインスレッドで呼ぶこと。
-     *
-     * @param player 判定対象のプレイヤー
-     * @return ディープダークまたは otherside にいる場合 true
-     */
-    public static boolean isInDeepDark(ServerPlayer player) {
-        return player.serverLevel().getBiome(player.blockPosition()).is(Biomes.DEEP_DARK)
-                || "deeperdarker:otherside".equals(player.serverLevel().dimension().location().toString());
     }
 }

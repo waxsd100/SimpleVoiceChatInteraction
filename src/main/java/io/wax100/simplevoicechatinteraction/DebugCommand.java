@@ -34,7 +34,7 @@ public class DebugCommand {
                             if (VoiceChatSculkPlugin.instance != null) {
                                 // 実際の音声インタラクションロジックを呼び出す
                                 VoiceChatSculkPlugin.instance.processAudioInteraction(player, db, false);
-                                
+
                                 source.sendSuccess(() -> Component.literal(
                                         "§a[SVC Debug] §f" + db + " dB の音声をシミュレートしました。"), true);
                             } else {
@@ -90,13 +90,13 @@ public class DebugCommand {
                             .orElse(null);
 
                     if (modConfig != null) {
-                        try (com.electronwill.nightconfig.core.file.CommentedFileConfig fileConfig = 
-                                com.electronwill.nightconfig.core.file.CommentedFileConfig.builder(modConfig.getFullPath())
-                                    .sync().autosave().build()) {
+                        try (com.electronwill.nightconfig.core.file.CommentedFileConfig fileConfig =
+                                     com.electronwill.nightconfig.core.file.CommentedFileConfig.builder(modConfig.getFullPath())
+                                             .sync().autosave().build()) {
                             fileConfig.load();
                             modConfig.getSpec().acceptConfig(fileConfig);
                             Config.reloadCachedValues();
-                            
+
                             context.getSource().sendSuccess(() -> Component.literal("§a[SVC Interaction] 設定ファイルを再読み込みしました。 (Config reloaded)"), true);
                         } catch (Exception e) {
                             context.getSource().sendFailure(Component.literal("§c[SVC Interaction] 設定のリロードに失敗しました: " + e.getMessage()));

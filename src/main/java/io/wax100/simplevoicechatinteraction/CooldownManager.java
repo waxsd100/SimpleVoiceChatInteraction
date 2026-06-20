@@ -10,12 +10,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CooldownManager {
 
-    private final ConcurrentHashMap<UUID, Long> sculkCooldowns = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<UUID, Long> shockwaveCooldowns = new ConcurrentHashMap<>();
-
     private static final long SCULK_COOLDOWN_MS = 3000L;
     private static final long COOLDOWN_CLEANUP_INTERVAL_MS = 60_000L;
-
+    private final ConcurrentHashMap<UUID, Long> sculkCooldowns = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Long> shockwaveCooldowns = new ConcurrentHashMap<>();
     private volatile long lastCleanupTime = 0L;
 
     /**

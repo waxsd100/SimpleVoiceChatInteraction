@@ -9,54 +9,25 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Mod.EventBusSubscriber(modid = SimpleVoiceChatInteraction.MODID)
 public class VoiceMeterManager {
 
-    /** BossBar進捗計算用の最大dB値 */
+    /**
+     * BossBar進捗計算用の最大dB値
+     */
     private static final double MAX_DB = 200.0;
 
     private static final Map<UUID, MeterData> playerMeters = new ConcurrentHashMap<>();
-
-    public static class MeterData {
-        public ServerBossEvent bossEvent;
-        public boolean manuallyEnabled;
-        public boolean inAncientCity;
-        private double currentDb = 0.0;
-        public volatile int lastDisplayedDb = -999;
-        public volatile int lastDisplayedCooldownDeci = -999;
-        public volatile int shockwaveVisualTimer = 0;
-        public volatile boolean needsUpdate = false;
-        public volatile String monitorTargetName = null;
-
-        public synchronized void updateDb(double dB) {
-            this.currentDb = Math.max(this.currentDb, dB);
-        }
-
-        public synchronized double getDb() {
-            return this.currentDb;
-        }
-
-        public synchronized boolean decayDb(double amount) {
-            if (this.currentDb > 0.0) {
-                this.currentDb -= amount;
-                if (this.currentDb < 0.0) {
-                    this.currentDb = 0.0;
-                }
-                return true;
-            }
-            return false;
-        }
-    }
 
     public static void updateMeter(ServerPlayer player, double dB) {
         MeterData data = playerMeters.computeIfAbsent(player.getUUID(), uuid -> createAndRegisterMeter(player));
         // もし他プレイヤーをモニター中の場合は、自分自身の音声でメーターを上書きしない
         if (data.monitorTargetName != null) return;
-        
+
         data.updateDb(dB); // スレッドセーフなピークホールド更新
         data.needsUpdate = true;
     }
@@ -72,7 +43,7 @@ public class VoiceMeterManager {
         MeterData data = playerMeters.computeIfAbsent(player.getUUID(), uuid -> createAndRegisterMeter(player));
         data.manuallyEnabled = !data.manuallyEnabled;
         data.needsUpdate = true;
-        
+
         player.sendSystemMessage(Component.literal("§a[SVC] 音量メーターを " + (data.manuallyEnabled ? "§eオン" : "§cオフ") + " §aにしました。"));
         updateBossBar(player, data);
         data.needsUpdate = false;
@@ -203,10 +174,10 @@ public class VoiceMeterManager {
 
     private static void updateBossBar(ServerPlayer player, MeterData data) {
         boolean shouldShow = data.manuallyEnabled || data.inAncientCity;
-        
+
         if (shouldShow) {
             data.bossEvent.addPlayer(player);
-            
+
             double currentDbValue = data.getDb();
             double progress = Math.max(0.0, Math.min(1.0, currentDbValue / MAX_DB));
             data.bossEvent.setProgress((float) progress);
@@ -232,7 +203,7 @@ public class VoiceMeterManager {
             if (currentDbInt != data.lastDisplayedDb || cooldownDeci != data.lastDisplayedCooldownDeci) {
                 data.lastDisplayedDb = currentDbInt;
                 data.lastDisplayedCooldownDeci = cooldownDeci;
-                
+
                 String prefix = data.monitorTargetName != null ? "§a[" + data.monitorTargetName + "] " : "";
                 String cooldownText = cooldownDeci > 0 ? String.format(" §8[CD: %.1fs]", cooldownDeci / 10.0) : "";
                 // 発動エフェクト中（1秒間）は紫色に固定
@@ -255,6 +226,37 @@ public class VoiceMeterManager {
             }
         } else {
             data.bossEvent.removePlayer(player);
+        }
+    }
+
+    public static class MeterData {
+        public ServerBossEvent bossEvent;
+        public boolean manuallyEnabled;
+        public boolean inAncientCity;
+        public volatile int lastDisplayedDb = -999;
+        public volatile int lastDisplayedCooldownDeci = -999;
+        public volatile int shockwaveVisualTimer = 0;
+        public volatile boolean needsUpdate = false;
+        public volatile String monitorTargetName = null;
+        private double currentDb = 0.0;
+
+        public synchronized void updateDb(double dB) {
+            this.currentDb = Math.max(this.currentDb, dB);
+        }
+
+        public synchronized double getDb() {
+            return this.currentDb;
+        }
+
+        public synchronized boolean decayDb(double amount) {
+            if (this.currentDb > 0.0) {
+                this.currentDb -= amount;
+                if (this.currentDb < 0.0) {
+                    this.currentDb = 0.0;
+                }
+                return true;
+            }
+            return false;
         }
     }
 }

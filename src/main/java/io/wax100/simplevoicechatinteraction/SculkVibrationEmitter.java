@@ -37,6 +37,19 @@ public class SculkVibrationEmitter {
     };
 
     /**
+     * 指定されたスカルクセンサー周波数に対応するバニラの {@link GameEvent} を返す。
+     *
+     * @param frequency 周波数（1〜15）
+     * @return 対応する GameEvent。範囲外の場合は {@link GameEvent#STEP} を返す
+     */
+    public static GameEvent getGameEventForFrequency(int frequency) {
+        if (frequency < 1 || frequency > 15) {
+            return GameEvent.STEP;
+        }
+        return FREQUENCY_EVENTS[frequency - 1];
+    }
+
+    /**
      * プレイヤー位置に GameEvent を発生させてスカルクセンサーを反応させる。
      * サーバーメインスレッドで呼ぶこと。
      *
@@ -52,18 +65,5 @@ public class SculkVibrationEmitter {
 
         LOGGER.debug("[SimpleVoiceChatInteraction] スカルク振動 (周波数={}) {} の位置 {}",
                 frequency, player.getName().getString(), player.blockPosition());
-    }
-
-    /**
-     * 指定されたスカルクセンサー周波数に対応するバニラの {@link GameEvent} を返す。
-     *
-     * @param frequency 周波数（1〜15）
-     * @return 対応する GameEvent。範囲外の場合は {@link GameEvent#STEP} を返す
-     */
-    public static GameEvent getGameEventForFrequency(int frequency) {
-        if (frequency < 1 || frequency > 15) {
-            return GameEvent.STEP;
-        }
-        return FREQUENCY_EVENTS[frequency - 1];
     }
 }
