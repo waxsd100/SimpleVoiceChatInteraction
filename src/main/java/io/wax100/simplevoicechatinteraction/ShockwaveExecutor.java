@@ -119,9 +119,10 @@ public class ShockwaveExecutor {
             if (isInBeamCylinder(eyePos, lookDir, beamLength, entity.position().add(0, entity.getBbHeight() / 2.0, 0))) {
                 float beamDamage = damage * BEAM_DAMAGE_MULTIPLIER;
                 applyDamageAndEffects(level, sourcePlayer, entity, beamDamage, darknessDuration);
-                // ビームの方向にノックバック
-                Vec3 knockback = lookDir.scale(BEAM_KNOCKBACK_HORIZONTAL);
-                entity.setDeltaMovement(entity.getDeltaMovement().add(knockback.x, BEAM_KNOCKBACK_VERTICAL, knockback.z));
+                // ノックバックの強さをダメージに比例させる（基本ダメージで正規化）
+                double knockbackScale = beamDamage / Math.max(1.0, (float) Config.shockwaveDamage);
+                Vec3 knockback = lookDir.scale(BEAM_KNOCKBACK_HORIZONTAL * knockbackScale);
+                entity.setDeltaMovement(entity.getDeltaMovement().add(knockback.x, BEAM_KNOCKBACK_VERTICAL * knockbackScale, knockback.z));
                 entity.hurtMarked = true;
                 beamHitCount++;
             }
