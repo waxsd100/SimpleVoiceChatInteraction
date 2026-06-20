@@ -54,6 +54,30 @@ public class DebugCommand {
                 })
         );
 
+        // 他プレイヤーのdBをモニタリングするコマンド
+        dispatcher.register(Commands.literal("voice_monitor")
+                .requires(source -> source.hasPermission(2))
+                .executes(context -> {
+                    ServerPlayer admin = context.getSource().getPlayerOrException();
+                    if (VoiceChatSculkPlugin.instance != null) {
+                        VoiceChatSculkPlugin.instance.activeMonitors.remove(admin.getUUID());
+                        context.getSource().sendSuccess(() -> Component.literal("§a[SVC Monitor] モニタリングを停止しました。"), false);
+                    }
+                    return 1;
+                })
+                .then(Commands.argument("target", net.minecraft.commands.arguments.EntityArgument.player())
+                        .executes(context -> {
+                            ServerPlayer admin = context.getSource().getPlayerOrException();
+                            ServerPlayer target = net.minecraft.commands.arguments.EntityArgument.getPlayer(context, "target");
+                            if (VoiceChatSculkPlugin.instance != null) {
+                                VoiceChatSculkPlugin.instance.activeMonitors.put(admin.getUUID(), target.getUUID());
+                                context.getSource().sendSuccess(() -> Component.literal("§a[SVC Monitor] " + target.getScoreboardName() + " のマイク音量モニタリングを開始しました。"), false);
+                            }
+                            return 1;
+                        })
+                )
+        );
+
         // コンフィグリロードコマンド
         dispatcher.register(Commands.literal("voice_reload")
                 .requires(source -> source.hasPermission(2)) // OP権限が必要

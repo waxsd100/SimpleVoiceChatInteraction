@@ -33,6 +33,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     private final ShockwaveExecutor shockwaveExecutor = new ShockwaveExecutor();
     private final java.util.concurrent.ConcurrentHashMap<UUID, OpusDecoder> decoders = new java.util.concurrent.ConcurrentHashMap<>();
     private final java.util.concurrent.ConcurrentHashMap<UUID, Double> emaDbMap = new java.util.concurrent.ConcurrentHashMap<>();
+    public final java.util.concurrent.ConcurrentHashMap<UUID, UUID> activeMonitors = new java.util.concurrent.ConcurrentHashMap<>();
 
     private VoicechatApi voicechatApi;
 
@@ -117,6 +118,18 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         VoiceMeterManager.updateMeter(serverPlayer, actualDb);
 
         UUID playerUUID = serverPlayer.getUUID();
+        MinecraftServer server = serverPlayer.getServer();
+        if (server != null) {
+            for (java.util.Map.Entry<UUID, UUID> entry : activeMonitors.entrySet()) {
+                if (entry.getValue().equals(playerUUID)) {
+                    ServerPlayer admin = server.getPlayerList().getPlayer(entry.getKey());
+                    if (admin != null) {
+                        admin.displayClientMessage(net.minecraft.network.chat.Component.literal("§e[Monitor] §a" + serverPlayer.getScoreboardName() + " §f: " + String.format("%.1f", actualDb) + " dB"), true);
+                    }
+                }
+            }
+        }
+
         long now = System.currentTimeMillis();
 
         cooldownManager.cleanupIfNeeded(now, Config.shockwaveCooldown);
@@ -127,7 +140,6 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
 
         if (!sculkReady && !shockwaveReady) return;
 
-        MinecraftServer server = serverPlayer.getServer();
         if (server == null) return;
 
         if (sculkReady && actualDb >= Config.minimumActivationThreshold) {
