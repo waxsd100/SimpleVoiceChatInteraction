@@ -106,7 +106,8 @@ public class ShockwaveExecutor {
         for (LivingEntity entity : beamCandidates) {
             // エンティティがビーム（円柱）の中にいるか判定
             if (isInBeamCylinder(eyePos, lookDir, beamLength, entity.position().add(0, entity.getBbHeight() / 2.0, 0))) {
-                applyDamageAndEffects(level, sourcePlayer, entity, damage, darknessDuration);
+                float beamDamage = damage * 1.5F; // ビームは周囲AoEより高威力
+                applyDamageAndEffects(level, sourcePlayer, entity, beamDamage, darknessDuration);
                 // ビームの方向にノックバック
                 Vec3 knockback = lookDir.scale(1.5);
                 entity.setDeltaMovement(entity.getDeltaMovement().add(knockback.x, 0.3, knockback.z));
