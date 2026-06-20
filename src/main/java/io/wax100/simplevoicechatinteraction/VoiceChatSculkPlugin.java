@@ -57,6 +57,13 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     }
 
     /**
+     * CooldownManagerへのアクセサ。
+     */
+    public CooldownManager getCooldownManager() {
+        return cooldownManager;
+    }
+
+    /**
      * モニターマップへのアクセサ。
      * @return activeMonitors マップ
      */
@@ -167,6 +174,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
 
         if (shockwaveReady && actualDb >= Config.shockwaveThreshold) {
             cooldownManager.recordShockwaveActivation(playerUUID, now);
+            VoiceMeterManager.notifyShockwaveFired(serverPlayer);
             final double finalDb = actualDb;
             server.execute(() -> {
                 if (serverPlayer.isRemoved() || serverPlayer.hasDisconnected()) return;
@@ -192,8 +200,8 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
 
             double rawDb = AudioUtils.calculateDbFromPcm(pcmData, Config.microphoneBaseValue, Config.microphoneMultiplier);
 
-            // ホワイトノイズなどの低音量ノイズゲート（30dB未満は無音扱い）
-            if (rawDb < 30.0) {
+            // 環境音などの低音量ノイズゲート（Configで指定した閾値未満は無音扱い）
+            if (rawDb < Config.noiseGateThreshold) {
                 rawDb = 0.0;
             }
             

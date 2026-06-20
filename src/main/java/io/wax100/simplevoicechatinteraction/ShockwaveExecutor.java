@@ -45,10 +45,6 @@ public class ShockwaveExecutor {
     private static final double BEAM_LENGTH_SCALE = 3.0;
     /** ビームダメージの倍率（周囲AoEダメージに対する比率） */
     private static final float BEAM_DAMAGE_MULTIPLIER = 1.5F;
-    /** ビームによるノックバックの水平方向の強度（閾値ギリギリでバニラウォーデン相当） */
-    private static final double BEAM_KNOCKBACK_HORIZONTAL = 2.3;
-    /** ビームによるノックバックの垂直方向の強度 */
-    private static final double BEAM_KNOCKBACK_VERTICAL = 0.4;
 
     /**
      * 発動元プレイヤーを中心にソニックショックウェーブを発生させる。
@@ -63,18 +59,36 @@ public class ShockwaveExecutor {
         ServerLevel level = sourcePlayer.serverLevel();
         
         double threshold = Config.shockwaveThreshold;
-        // dBが閾値から100.0（最大）までの間で0.0〜1.0の割合（progress）を計算
-        double progress = 0.0;
-        if (threshold < 100.0) {
-            progress = (dB - threshold) / (100.0 - threshold);
-            progress = Mth.clamp(progress, 0.0, 1.0);
+        
+        // 閾値〜100dB までのプログレス (0.0 〜 1.0)
+        double progressTo100 = 0.0;
+        double referenceDb = 100.0;
+        if (threshold < referenceDb) {
+            progressTo100 = Mth.clamp((dB - threshold) / (referenceDb - threshold), 0.0, 1.0);
         }
 
-        double radiusMultiplier = 1.0 + (Config.shockwaveMaxRadiusMultiplier - 1.0) * progress;
-        double damageMultiplier = 1.0 + (Config.shockwaveMaxDamageMultiplier - 1.0) * progress;
+        // 100dB〜200dB までのプログレス (0.0 〜 1.0)
+        double overdriveProgress = 0.0;
+        if (dB > referenceDb) {
+            overdriveProgress = Mth.clamp((dB - referenceDb) / (200.0 - referenceDb), 0.0, 1.0);
+        }
 
-        double radius = Config.shockwaveRadius * radiusMultiplier;
-        float damage = (float) (Config.shockwaveDamage * damageMultiplier);
+        double radius;
+        float damage;
+        if (progressTo100 > 0.0) {
+            radius = Config.shockwaveRadius + (Config.shockwave100dbRadius - Config.shockwaveRadius) * progressTo100;
+            damage = (float) (Config.shockwaveDamage + (Config.shockwave100dbDamage - Config.shockwaveDamage) * progressTo100);
+        } else {
+            radius = Config.shockwaveRadius;
+            damage = (float) Config.shockwaveDamage;
+        }
+
+        // オーバードライブ係数の適用
+        if (overdriveProgress > 0.0) {
+            double overdriveMult = 1.0 + (Config.shockwaveOverdriveMultiplier - 1.0) * overdriveProgress;
+            radius *= overdriveMult;
+            damage *= overdriveMult;
+        }
         int darknessDuration = Config.shockwaveDarknessDuration;
 
         Vec3 center = sourcePlayer.position();
@@ -121,8 +135,8 @@ public class ShockwaveExecutor {
                 applyDamageAndEffects(level, sourcePlayer, entity, beamDamage, darknessDuration);
                 // ノックバックの強さをダメージに比例させる（基本ダメージで正規化）
                 double knockbackScale = beamDamage / Math.max(1.0, (float) Config.shockwaveDamage);
-                Vec3 knockback = lookDir.scale(BEAM_KNOCKBACK_HORIZONTAL * knockbackScale);
-                entity.setDeltaMovement(entity.getDeltaMovement().add(knockback.x, BEAM_KNOCKBACK_VERTICAL * knockbackScale, knockback.z));
+                Vec3 knockback = lookDir.scale(Config.shockwaveKnockbackHorizontal * knockbackScale);
+                entity.setDeltaMovement(entity.getDeltaMovement().add(knockback.x, Config.shockwaveKnockbackVertical * knockbackScale, knockback.z));
                 entity.hurtMarked = true;
                 // ビーム被弾プレイヤーへのスタン効果（移動不能＋視界ぼやけ）
                 if (entity instanceof ServerPlayer hitPlayer) {

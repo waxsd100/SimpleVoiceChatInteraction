@@ -62,6 +62,22 @@ public class CooldownManager {
     }
 
     /**
+     * ショックウェーブの残りクールダウン時間を取得する。
+     *
+     * @param playerUUID プレイヤーのUUID
+     * @param now        現在時刻（ミリ秒）
+     * @param cooldownMs 設定されたクールダウン時間（ミリ秒）
+     * @return 残り時間（ミリ秒）。クールダウン中でなければ0
+     */
+    public long getShockwaveCooldownRemaining(UUID playerUUID, long now, long cooldownMs) {
+        Long lastTime = shockwaveCooldowns.get(playerUUID);
+        if (lastTime == null) return 0;
+        long elapsed = now - lastTime;
+        if (elapsed >= cooldownMs) return 0;
+        return cooldownMs - elapsed;
+    }
+
+    /**
      * 古いクールダウンエントリを定期的に削除してメモリリークを防ぐ。
      * ログアウト済みプレイヤーのエントリが無限に蓄積するのを防止する。
      *

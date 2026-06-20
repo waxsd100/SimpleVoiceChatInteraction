@@ -17,7 +17,7 @@ import java.util.UUID;
 public class VoiceMeterManager {
 
     /** BossBar進捗計算用の最大dB値 */
-    private static final double MAX_DB = 100.0;
+    private static final double MAX_DB = 200.0;
 
     private static final Map<UUID, MeterData> playerMeters = new ConcurrentHashMap<>();
 
@@ -27,6 +27,8 @@ public class VoiceMeterManager {
         public boolean inAncientCity;
         public volatile double currentDb = 0.0;
         public volatile int lastDisplayedDb = -999;
+        public volatile int lastDisplayedCooldownDeci = -999;
+        public volatile int shockwaveVisualTimer = 0;
         public volatile boolean needsUpdate = false;
         public volatile String monitorTargetName = null;
     }
@@ -57,6 +59,14 @@ public class VoiceMeterManager {
         data.needsUpdate = false;
     }
 
+    public static void notifyShockwaveFired(ServerPlayer player) {
+        MeterData data = playerMeters.get(player.getUUID());
+        if (data != null) {
+            data.shockwaveVisualTimer = 20; // 1秒間紫色をキープ (20 ticks)
+            data.needsUpdate = true;
+        }
+    }
+
     public static void setMonitorMode(ServerPlayer admin, String targetName) {
         MeterData data = playerMeters.computeIfAbsent(admin.getUUID(), uuid -> createAndRegisterMeter(admin));
         data.monitorTargetName = targetName;
@@ -71,6 +81,7 @@ public class VoiceMeterManager {
             data.monitorTargetName = null;
             data.manuallyEnabled = false; // モニター解除時にメーターも非表示にする
             data.lastDisplayedDb = -999; // 次回必ず更新させる
+            data.lastDisplayedCooldownDeci = -999;
             data.needsUpdate = true;
             updateBossBar(admin, data);
         }
@@ -122,6 +133,31 @@ public class VoiceMeterManager {
             data.needsUpdate = true;
         }
 
+        // クールダウン中は表示更新のため強制的にneedsUpdateをtrueにする
+        if (serverPlayer.tickCount % 2 == 0) {
+            if (data.shockwaveVisualTimer > 0) {
+                data.shockwaveVisualTimer -= 2;
+                if (data.shockwaveVisualTimer <= 0) {
+                    data.shockwaveVisualTimer = 0;
+                    data.needsUpdate = true;
+                }
+            }
+            if (VoiceChatSculkPlugin.instance != null) {
+                UUID targetUUID = serverPlayer.getUUID();
+                if (data.monitorTargetName != null && serverPlayer.getServer() != null) {
+                    ServerPlayer targetPlayer = serverPlayer.getServer().getPlayerList().getPlayerByName(data.monitorTargetName);
+                    if (targetPlayer != null) {
+                        targetUUID = targetPlayer.getUUID();
+                    }
+                }
+                long remainingMs = VoiceChatSculkPlugin.instance.getCooldownManager()
+                        .getShockwaveCooldownRemaining(targetUUID, System.currentTimeMillis(), Config.shockwaveCooldown);
+                if (remainingMs > 0) {
+                    data.needsUpdate = true;
+                }
+            }
+        }
+
         // 状態が変化した時だけパケットを送信してBossBarを更新する
         if (data.needsUpdate) {
             updateBossBar(serverPlayer, data);
@@ -153,30 +189,50 @@ public class VoiceMeterManager {
         if (shouldShow) {
             data.bossEvent.addPlayer(player);
             
-            // 進捗の計算（0dB 〜 100dB を 0.0 〜 1.0 にマッピング）
+            // 進捗の計算（0dB 〜 200dB を 0.0 〜 1.0 にマッピング）
             double progress = Math.max(0.0, Math.min(1.0, data.currentDb / MAX_DB));
             
             data.bossEvent.setProgress((float) progress);
             
-            // 文字列生成とパケット送信の負荷を抑えるため、整数値(int)が変わった時だけテキストを更新
+            // 文字列生成とパケット送信の負荷を抑えるため、整数値やクールダウンが変わった時だけテキストを更新
             int currentDbInt = (int) Math.round(data.currentDb);
-            if (currentDbInt != data.lastDisplayedDb) {
+
+            long remainingMs = 0;
+            if (VoiceChatSculkPlugin.instance != null) {
+                UUID targetUUID = player.getUUID();
+                if (data.monitorTargetName != null && player.getServer() != null) {
+                    ServerPlayer targetPlayer = player.getServer().getPlayerList().getPlayerByName(data.monitorTargetName);
+                    if (targetPlayer != null) {
+                        targetUUID = targetPlayer.getUUID();
+                    }
+                }
+                remainingMs = VoiceChatSculkPlugin.instance.getCooldownManager()
+                        .getShockwaveCooldownRemaining(targetUUID, System.currentTimeMillis(), Config.shockwaveCooldown);
+            }
+            int cooldownDeci = (int) (remainingMs / 100);
+
+            if (currentDbInt != data.lastDisplayedDb || cooldownDeci != data.lastDisplayedCooldownDeci) {
                 data.lastDisplayedDb = currentDbInt;
+                data.lastDisplayedCooldownDeci = cooldownDeci;
                 
                 String prefix = data.monitorTargetName != null ? "§a[" + data.monitorTargetName + "] " : "";
+                String cooldownText = cooldownDeci > 0 ? String.format(" §8[CD: %.1fs]", cooldownDeci / 10.0) : "";
                 
-                if (data.currentDb >= Config.shockwaveThreshold) {
+                if (data.shockwaveVisualTimer > 0) {
                     data.bossEvent.setColor(BossEvent.BossBarColor.PURPLE);
-                    data.bossEvent.setName(Component.literal(prefix + "§5Voice Volume: " + currentDbInt + " dB (SHOCKWAVE)"));
+                    data.bossEvent.setName(Component.literal(prefix + "§5Voice Volume: " + currentDbInt + " dB (SHOCKWAVE)" + cooldownText));
+                } else if (data.currentDb >= Config.shockwaveThreshold) {
+                    data.bossEvent.setColor(BossEvent.BossBarColor.RED);
+                    data.bossEvent.setName(Component.literal(prefix + "§cVoice Volume: " + currentDbInt + " dB" + cooldownText));
                 } else if (data.currentDb >= (Config.minimumActivationThreshold + Config.shockwaveThreshold) / 2.0) {
                     data.bossEvent.setColor(BossEvent.BossBarColor.RED);
-                    data.bossEvent.setName(Component.literal(prefix + "§cVoice Volume: " + currentDbInt + " dB"));
+                    data.bossEvent.setName(Component.literal(prefix + "§cVoice Volume: " + currentDbInt + " dB" + cooldownText));
                 } else if (data.currentDb >= Config.minimumActivationThreshold) {
                     data.bossEvent.setColor(BossEvent.BossBarColor.YELLOW);
-                    data.bossEvent.setName(Component.literal(prefix + "§eVoice Volume: " + currentDbInt + " dB"));
+                    data.bossEvent.setName(Component.literal(prefix + "§eVoice Volume: " + currentDbInt + " dB" + cooldownText));
                 } else {
                     data.bossEvent.setColor(BossEvent.BossBarColor.BLUE);
-                    data.bossEvent.setName(Component.literal(prefix + "§bVoice Volume: " + currentDbInt + " dB"));
+                    data.bossEvent.setName(Component.literal(prefix + "§bVoice Volume: " + currentDbInt + " dB" + cooldownText));
                 }
             }
         } else {

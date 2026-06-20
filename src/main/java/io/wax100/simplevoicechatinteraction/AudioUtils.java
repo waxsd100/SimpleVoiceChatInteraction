@@ -14,6 +14,10 @@ public final class AudioUtils {
         // ユーティリティクラスのためインスタンス化不可
     }
 
+    // フィルタ用の定数 (サンプリングレート 48000Hz 前提)
+    private static final double ALPHA_LP = 0.281; // Low-pass at 3000 Hz
+    private static final double ALPHA_HP = 0.962; // High-pass at 300 Hz
+
     /**
      * PCM（パルス符号変調）サンプル配列から音声レベル（dB）を計算する。
      * <p>
@@ -24,17 +28,56 @@ public final class AudioUtils {
      * </ul>
      *
      * @param pcmData PCMサンプル配列（16ビット符号付き整数）
-     * @return 音声レベル（dB SPL相当、0.0〜100.0）。null/空/無音の場合は 0.0
+     * @return 音声レベル（dB SPL相当、0.0〜200.0）。null/空/無音の場合は 0.0
      */
     public static double calculateDbFromPcm(short[] pcmData, double baseValue, double multiplier) {
         if (pcmData == null || pcmData.length == 0) {
             return 0.0;
         }
 
+        double[] processedSamples = new double[pcmData.length];
+        double noisePenalty = 1.0;
+
+        if (Config.advancedNoiseFiltering) {
+            double prevX = pcmData[0];
+            double prevY_HP = pcmData[0];
+            double prevY_LP = prevY_HP;
+            int zeroCrossings = 0;
+
+            for (int i = 0; i < pcmData.length; i++) {
+                double x = pcmData[i];
+                // High-pass filter (カットオフ約300Hz)
+                double y_hp = ALPHA_HP * (prevY_HP + x - prevX);
+                // Low-pass filter (カットオフ約3000Hz)
+                double y_lp = prevY_LP + ALPHA_LP * (y_hp - prevY_LP);
+                
+                processedSamples[i] = y_lp;
+                
+                if (i > 0) {
+                    if ((processedSamples[i - 1] > 0 && processedSamples[i] <= 0) || (processedSamples[i - 1] < 0 && processedSamples[i] >= 0)) {
+                        zeroCrossings++;
+                    }
+                }
+                prevX = x;
+                prevY_HP = y_hp;
+                prevY_LP = y_lp;
+            }
+
+            double zcr = (double) zeroCrossings / pcmData.length;
+            // ZCRが高い（高周波数成分が支配的、ホワイトノイズや打鍵音）場合は減衰
+            if (zcr > 0.15) {
+                noisePenalty = 0.1; // 音量を大幅に下げる
+            }
+        } else {
+            for (int i = 0; i < pcmData.length; i++) {
+                processedSamples[i] = pcmData[i];
+            }
+        }
+
         // 振幅の絶対値を配列にコピーしてソート
-        short[] absSamples = new short[pcmData.length];
-        for (int i = 0; i < pcmData.length; i++) {
-            absSamples[i] = (short) Math.min(Math.abs((int) pcmData[i]), Short.MAX_VALUE);
+        short[] absSamples = new short[processedSamples.length];
+        for (int i = 0; i < processedSamples.length; i++) {
+            absSamples[i] = (short) Math.min(Math.abs((int) processedSamples[i]), Short.MAX_VALUE);
         }
         java.util.Arrays.sort(absSamples);
 
@@ -53,6 +96,9 @@ public final class AudioUtils {
         }
         double rms = Math.sqrt(sumSquares / validLength);
 
+        // ZCRなどのノイズ判定ペナルティを適用
+        rms *= noisePenalty;
+
         // 事実上の無音
         if (rms < 1.0) {
             return 0.0;
@@ -65,7 +111,7 @@ public final class AudioUtils {
         // 人間の声のダイナミックレンジに合わせてスケールを調整
         // Configで設定されたベース値と乗数を使用する
         double scaledDb = baseValue + (dbfs * multiplier);
-        return Math.min(100.0, Math.max(0.0, scaledDb));
+        return Math.min(200.0, Math.max(0.0, scaledDb));
     }
 
 }

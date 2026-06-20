@@ -47,7 +47,7 @@ class AudioUtilsTest {
             // 全サンプルが0の無音PCMデータ
             short[] silence = new short[960];
 
-            double result = AudioUtils.calculateDbFromPcm(silence, 120.0, 2.0);
+            double result = AudioUtils.calculateDbFromPcm(silence, 220.0, 2.0);
 
             assertEquals(0.0, result,
                     "無音データ（全ゼロ）は0.0を返すべき");
@@ -60,7 +60,7 @@ class AudioUtilsTest {
         @Test
         @DisplayName("nullデータの場合、0.0を返す")
         void nullデータの場合0_0を返す() {
-            double result = AudioUtils.calculateDbFromPcm(null, 120.0, 2.0);
+            double result = AudioUtils.calculateDbFromPcm(null, 220.0, 2.0);
 
             assertEquals(0.0, result,
                     "nullデータは0.0を返すべき");
@@ -74,7 +74,7 @@ class AudioUtilsTest {
         void 空配列の場合0_0を返す() {
             short[] empty = new short[0];
 
-            double result = AudioUtils.calculateDbFromPcm(empty, 120.0, 2.0);
+            double result = AudioUtils.calculateDbFromPcm(empty, 220.0, 2.0);
 
             assertEquals(0.0, result,
                     "空配列は0.0を返すべき");
@@ -85,38 +85,38 @@ class AudioUtilsTest {
          * RMS = MAX_VALUE → 20 * log10(MAX_VALUE / MAX_VALUE) = 20 * log10(1) = 0 dB
          */
         @Test
-        @DisplayName("最大音量（Short.MAX_VALUE）の場合、約100dBを返す")
-        void 最大音量の場合約100dBを返す() {
+        @DisplayName("最大音量（Short.MAX_VALUE）の場合、上限の200dBを返す")
+        void 最大音量の場合上限の200dBを返す() {
             short[] fullVolume = new short[960];
             for (int i = 0; i < fullVolume.length; i++) {
                 fullVolume[i] = Short.MAX_VALUE;
             }
 
-            double result = AudioUtils.calculateDbFromPcm(fullVolume, 120.0, 2.0);
+            double result = AudioUtils.calculateDbFromPcm(fullVolume, 220.0, 2.0);
 
-            // 100dBに非常に近い値（浮動小数点誤差を考慮して±0.01）
-            assertEquals(100.0, result, 0.01,
-                    "最大音量はほぼ100dBを返すべき");
+            // 200dBに非常に近い値（浮動小数点誤差を考慮して±0.01）
+            assertEquals(200.0, result, 0.01,
+                    "最大音量はほぼ200dBを返すべき");
         }
 
         /**
-         * 振幅が半分の場合、100dBを返すことを確認。
+         * 振幅が半分の場合、200dBを返すことを確認。
          * RMS = MAX_VALUE/2 → 20 * log10(0.5) ≈ -6.02 dB
-         * 新しいスケール: 120 + (-6.02 * 2.0) = 107.96 → 上限の100.0に丸められる
+         * 新しいスケール: 220 + (-6.02 * 2.0) = 207.96 → 上限の200.0に丸められる
          */
         @Test
-        @DisplayName("半分の音量の場合、上限の100dBを返す")
-        void 半分の音量の場合上限の100dBを返す() {
+        @DisplayName("半分の音量の場合、上限の200dBを返す")
+        void 半分の音量の場合上限の200dBを返す() {
             short halfMax = (short) (Short.MAX_VALUE / 2);
             short[] halfVolume = new short[960];
             for (int i = 0; i < halfVolume.length; i++) {
                 halfVolume[i] = halfMax;
             }
 
-            double result = AudioUtils.calculateDbFromPcm(halfVolume, 120.0, 2.0);
+            double result = AudioUtils.calculateDbFromPcm(halfVolume, 220.0, 2.0);
 
-            assertEquals(100.0, result, 0.01,
-                    "半分の音量はスケーリング後100を超えるため、上限の100.0dBを返すべき");
+            assertEquals(200.0, result, 0.01,
+                    "半分の音量はスケーリング後200を超えるため、上限の200.0dBを返すべき");
         }
 
         /**
@@ -131,7 +131,7 @@ class AudioUtilsTest {
             short[] nearSilence = new short[960];
             nearSilence[0] = 1;
 
-            double result = AudioUtils.calculateDbFromPcm(nearSilence, 120.0, 2.0);
+            double result = AudioUtils.calculateDbFromPcm(nearSilence, 220.0, 2.0);
 
             assertEquals(0.0, result,
                     "RMS < 1.0 の微小音量は0.0を返すべき");
@@ -152,7 +152,7 @@ class AudioUtilsTest {
                 mediumVolume[i] = sampleValue;
             }
 
-            double dB = AudioUtils.calculateDbFromPcm(mediumVolume, 120.0, 2.0);
+            double dB = AudioUtils.calculateDbFromPcm(mediumVolume, 220.0, 2.0);
 
             // dBは0より大きいこと
             assertTrue(dB > 0.0, "中程度の音量のdB値は正であるべき");
@@ -162,9 +162,9 @@ class AudioUtilsTest {
             assertTrue(dB >= sculkThreshold,
                     "中程度の音量はスカルク閾値(60dB)以上であるべき。実際のdB: " + dB);
 
-            // 最大値 100dB より小さいこと
-            assertTrue(dB < 100.0,
-                    "最大音量でない限りdB値は100未満であるべき。実際のdB: " + dB);
+            // 最大値 200dB より小さいこと
+            assertTrue(dB < 200.0,
+                    "最大音量でない限りdB値は200未満であるべき。実際のdB: " + dB);
         }
 
         /**
@@ -186,8 +186,8 @@ class AudioUtilsTest {
                 negative[i] = -10000;
             }
 
-            double positiveDb = AudioUtils.calculateDbFromPcm(positive, 120.0, 2.0);
-            double negativeDb = AudioUtils.calculateDbFromPcm(negative, 120.0, 2.0);
+            double positiveDb = AudioUtils.calculateDbFromPcm(positive, 220.0, 2.0);
+            double negativeDb = AudioUtils.calculateDbFromPcm(negative, 220.0, 2.0);
 
             assertEquals(positiveDb, negativeDb, 0.001,
                     "二乗計算により、正負のサンプルは同じdB値を返すべき");
