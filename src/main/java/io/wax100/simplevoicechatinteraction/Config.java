@@ -66,7 +66,7 @@ public class Config {
 
         SPRINT_VOLUME_MULTIPLIER = BUILDER
                 .comment("ダッシュ（スプリント）中の声の音量倍率（係数）。",
-                        "1.5にすると、ダッシュ中の声の大きさが1.5倍（約+3.5dB）に増幅されます。",
+                        "2.5にすると、ダッシュ中の声の大きさが2.5倍（約+8.0dB）に増幅されます。",
                         "1.0にするとダッシュによる変化は発生しません。",
                         "範囲: 0.0～10.0。デフォルト: 2.5")
                 .defineInRange("sprint_volume_multiplier", 2.5, 0.0, 10.0);
@@ -156,8 +156,8 @@ public class Config {
 
         SHOCKWAVE_WARDEN_DAMAGE_MULTIPLIER = BUILDER
                 .comment("ウォーデンに対するショックウェーブのダメージ倍率。",
-                        "デフォルト: 100.0（ウォーデンに対して超特大ダメージ）")
-                .defineInRange("shockwave_warden_damage_multiplier", 100.0, 0.0, 1000.0);
+                        "デフォルト: 20.0（ウォーデンに対して超特大ダメージ）")
+                .defineInRange("shockwave_warden_damage_multiplier", 20.0, 0.0, 1000.0);
 
         SHOCKWAVE_DARKNESS_DURATION = BUILDER
                 .comment("周囲のプレイヤーに付与される暗闇エフェクトの持続時間（tick単位）。",

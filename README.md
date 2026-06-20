@@ -30,7 +30,7 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 | `group_interaction`                   | `true`        | If talking in groups should trigger vibrations               |
 | `whisper_volume_multiplier`           | `0.5`         | Volume multiplier when whispering (0.5 = approx -6dB)        |
 | `sneak_volume_multiplier`             | `0.5`         | Volume multiplier when sneaking (0.5 = approx -6dB)          |
-| `sprint_volume_multiplier`            | `2.5`         | Volume multiplier when sprinting (1.5 = approx +3.5dB)       |
+| `sprint_volume_multiplier`            | `2.5`         | Volume multiplier when sprinting (2.5 = approx +8.0dB)       |
 | `microphone_base_value`               | `100.0`       | Base value for audio scaling. Adjust to shift overall volume |
 | `microphone_multiplier`               | `2.0`         | Multiplier for audio scaling. Adjust if 100dB is hard to hit |
 | `voice_sculk_frequency`               | `7`           | The sculk sensor frequency emitted by voice (1-15)           |
@@ -44,7 +44,7 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 | `shockwave_max_damage_multiplier`     | `2.0`         | Max damage multiplier at maximum volume (100dB)              |
 | `shockwave_player_damage_multiplier`  | `0.5`         | Damage multiplier against players                            |
 | `shockwave_monster_damage_multiplier` | `5.0`         | Damage multiplier against monsters                           |
-| `shockwave_warden_damage_multiplier`  | `100.0`       | Damage multiplier against the Warden                         |
+| `shockwave_warden_damage_multiplier`  | `20.0`        | Damage multiplier against the Warden                         |
 | `shockwave_cooldown`                  | `30000`       | Cooldown of the shockwave effect in milliseconds (30s)       |
 | `shockwave_darkness_duration`         | `60`          | Duration of the darkness effect applied to players in ticks  |
 
@@ -63,7 +63,7 @@ The shockwave scales dynamically based on voice volume. At minimum volume (e.g.,
 | **Player** | `0.5x` | **2.0** (❤️x1) | **4.0** (❤️x2) | Reduced friendly fire |
 | **Normal (Animals, etc)** | `1.0x` | **4.0** (❤️x2) | **8.0** (❤️x4) | Standard damage |
 | **Monster** | `5.0x` | **20.0** (❤️x10) | **40.0** (❤️x20) | Very effective against normal mobs |
-| **Warden** | `100.0x` | **400.0** (❤️x200) | **800.0** (❤️x400) | Extreme damage against the Warden |
+| **Warden** | `20.0x` | **80.0** (❤️x40) | **160.0** (❤️x80) | Extreme damage against the Warden |
 
 ### Voice Volume (dB SPL) Reference
 
