@@ -183,8 +183,8 @@ public class Config {
         SHOCKWAVE_RADIUS = BUILDER
                 .comment("---------------------------------------------------------",
                         "ショックウェーブが閾値ギリギリで発動した時の基本半径（ブロック単位）。",
-                        "範囲: 0.0～100.0。デフォルト: 0.0（閾値付近では0mからスタート）")
-                .defineInRange("shockwave_radius", 0.0, 0.0, 100.0);
+                        "範囲: 0.0～100.0。デフォルト: 2.0（閾値付近ではAoE:1m, ビーム:6mからスタート）")
+                .defineInRange("shockwave_radius", 2.0, 0.0, 100.0);
 
         SHOCKWAVE_100DB_RADIUS = BUILDER
                 .comment("---------------------------------------------------------",
