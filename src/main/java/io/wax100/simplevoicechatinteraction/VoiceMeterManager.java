@@ -81,7 +81,7 @@ public class VoiceMeterManager {
         data.bossEvent = new ServerBossEvent(
                 Component.literal("Voice Volume"),
                 BossEvent.BossBarColor.BLUE,
-                BossEvent.BossBarOverlay.PROGRESS
+                BossEvent.BossBarOverlay.NOTCHED_20
         );
         return data;
     }
