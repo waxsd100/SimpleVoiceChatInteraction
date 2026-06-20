@@ -70,14 +70,15 @@ public class ShockwaveExecutor {
         Vec3 center = sourcePlayer.position();
         BlockPos centerBlock = sourcePlayer.blockPosition();
 
-        // ── フェーズ1: 周囲全方位への衝撃波（円形AoE） ──
+        // ── フェーズ1: 周囲全方位への衝撃波（小規模の円形AoE） ──
         Set<Integer> hitEntityIds = new HashSet<>();
 
-        double radiusSq = radius * radius;
+        double radialRadius = radius * 0.5; // 周囲AoEは小さめ
+        double radialRadiusSq = radialRadius * radialRadius;
         List<LivingEntity> nearbyEntities = level.getEntitiesOfClass(
                 LivingEntity.class,
-                sourcePlayer.getBoundingBox().inflate(radius),
-                e -> e != sourcePlayer && sourcePlayer.distanceToSqr(e) <= radiusSq
+                sourcePlayer.getBoundingBox().inflate(radialRadius),
+                e -> e != sourcePlayer && sourcePlayer.distanceToSqr(e) <= radialRadiusSq
         );
 
         for (LivingEntity entity : nearbyEntities) {
@@ -85,10 +86,10 @@ public class ShockwaveExecutor {
             hitEntityIds.add(entity.getId());
         }
 
-        spawnRadialEffects(level, center, centerBlock, radius);
+        spawnRadialEffects(level, center, centerBlock, radialRadius);
 
-        // ── フェーズ2: 前方へのソニックビーム（ウォーデン風） ──
-        double beamLength = radius * 1.5; // ビームの射程は周囲ショックウェーブより少し長い
+        // ── フェーズ2: 前方へのソニックビーム（ウォーデン風・長射程） ──
+        double beamLength = radius * 3.0; // ビームの射程は配置半径の3倍（長め）
         Vec3 lookDir = sourcePlayer.getLookAngle();
         Vec3 eyePos = sourcePlayer.getEyePosition();
 
@@ -106,6 +107,10 @@ public class ShockwaveExecutor {
             // エンティティがビーム（円柱）の中にいるか判定
             if (isInBeamCylinder(eyePos, lookDir, beamLength, entity.position().add(0, entity.getBbHeight() / 2.0, 0))) {
                 applyDamageAndEffects(level, sourcePlayer, entity, damage, darknessDuration);
+                // ビームの方向にノックバック
+                Vec3 knockback = lookDir.scale(1.5);
+                entity.setDeltaMovement(entity.getDeltaMovement().add(knockback.x, 0.3, knockback.z));
+                entity.hurtMarked = true;
             }
         }
 
@@ -115,8 +120,8 @@ public class ShockwaveExecutor {
                 .filter(e -> isInBeamCylinder(eyePos, lookDir, beamLength, e.position().add(0, e.getBbHeight() / 2.0, 0)))
                 .count();
 
-        LOGGER.debug("[SimpleVoiceChatInteraction] ショックウェーブ発動: {} 位置={} 半径={} ビーム長={} ヒット数={}",
-                sourcePlayer.getName().getString(), centerBlock, radius, beamLength, totalHits);
+        LOGGER.debug("[SimpleVoiceChatInteraction] ショックウェーブ発動: {} 位置={} AoE半径={} ビーム長={} ヒット数={}",
+                sourcePlayer.getName().getString(), centerBlock, radialRadius, beamLength, totalHits);
     }
 
     /**
@@ -213,8 +218,24 @@ public class ShockwaveExecutor {
      * プレイヤーの視線方向にソニックブームパーティクルを連続発射する。
      */
     private void spawnBeamEffects(ServerLevel level, Vec3 eyePos, Vec3 direction, double beamLength) {
+        BlockPos soundPos = BlockPos.containing(eyePos);
+
+        // ソニックチャージ音（ウォーデンの溜め音）
+        level.playSound(null, soundPos, SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.PLAYERS, 1.2F, 0.6F);
         // ソニックブーム音（ウォーデン固有の音）
-        level.playSound(null, BlockPos.containing(eyePos), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.5F, 0.5F);
+        level.playSound(null, soundPos, SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.5F, 0.5F);
+        // ゾンビがドアを砕く音（空気が引き裂かれるような破壊音）
+        level.playSound(null, soundPos, SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR, SoundSource.PLAYERS, 0.7F, 0.3F);
+        // ラヴェジャーの咆哮（獣の厚い感触の叫び）
+        level.playSound(null, soundPos, SoundEvents.RAVAGER_ROAR, SoundSource.PLAYERS, 0.6F, 0.4F);
+        // 金床の衝撃音（重厚な金属的打撃感）
+        level.playSound(null, soundPos, SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 0.5F, 0.3F);
+
+        // ビームの到達地点で雷鳴 + ドラゴンの唸り（遠くまで響く威圧感）
+        Vec3 impactPos = eyePos.add(direction.scale(beamLength));
+        BlockPos impactBlockPos = BlockPos.containing(impactPos);
+        level.playSound(null, impactBlockPos, SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.PLAYERS, 0.8F, 0.3F);
+        level.playSound(null, impactBlockPos, SoundEvents.ENDER_DRAGON_GROWL, SoundSource.PLAYERS, 0.4F, 0.5F);
 
         // ビーム沿いにソニックブームパーティクルを配置
         for (double dist = 1.0; dist <= beamLength; dist += 3.0) {
