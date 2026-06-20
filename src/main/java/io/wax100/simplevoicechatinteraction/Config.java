@@ -68,16 +68,16 @@ public class Config {
                 .comment("ダッシュ（スプリント）中の声の音量倍率（係数）。",
                         "1.5にすると、ダッシュ中の声の大きさが1.5倍（約+3.5dB）に増幅されます。",
                         "1.0にするとダッシュによる変化は発生しません。",
-                        "範囲: 0.0～10.0。デフォルト: 1.5")
-                .defineInRange("sprint_volume_multiplier", 1.5, 0.0, 10.0);
+                        "範囲: 0.0～10.0。デフォルト: 2.5")
+                .defineInRange("sprint_volume_multiplier", 2.5, 0.0, 10.0);
         BUILDER.pop();
 
         BUILDER.push("microphone_scaling");
         MICROPHONE_BASE_VALUE = BUILDER
                 .comment("マイクから取得した音声レベル（dBFS）をゲーム内の音量（dB SPL）に変換する際のベース値。",
                         "この値を上げると全体的な音量が底上げされます。",
-                        "範囲: 0.0～200.0。デフォルト: 120.0")
-                .defineInRange("microphone_base_value", 120.0, 0.0, 200.0);
+                        "範囲: 0.0～200.0。デフォルト: 100.0")
+                .defineInRange("microphone_base_value", 100.0, 0.0, 200.0);
 
         MICROPHONE_MULTIPLIER = BUILDER
                 .comment("マイクから取得した音声レベル（dBFS）に乗算する係数。",
@@ -97,8 +97,8 @@ public class Config {
                 .comment("スカルク振動を作動させるために必要な最小音量（dB SPL相当）。",
                         "日常の目安: 30(ささやき声), 60(普通の会話), 85(騒音)",
                         "この値より小さい音声は無視される。",
-                        "範囲: 0～100。デフォルト: 50")
-                .defineInRange("minimum_activation_threshold", 50, 0, 100);
+                        "範囲: 0～100。デフォルト: 65")
+                .defineInRange("minimum_activation_threshold", 65, 0, 100);
         BUILDER.pop();
 
         BUILDER.push("sonic_shockwave");
@@ -119,8 +119,8 @@ public class Config {
         SHOCKWAVE_THRESHOLD = BUILDER
                 .comment("ショックウェーブ効果を発動するためのオーディオレベル閾値（dB SPL相当）。",
                         "通常はminimum_activation_thresholdより高い値（大きい音量）に設定すべき。",
-                        "範囲: 0～100。デフォルト: 100")
-                .defineInRange("shockwave_threshold", 100, 0, 100);
+                        "範囲: 0～100。デフォルト: 80")
+                .defineInRange("shockwave_threshold", 80, 0, 100);
 
         SHOCKWAVE_RADIUS = BUILDER
                 .comment("ショックウェーブ効果の基本半径（ブロック単位）。",
@@ -156,8 +156,8 @@ public class Config {
 
         SHOCKWAVE_WARDEN_DAMAGE_MULTIPLIER = BUILDER
                 .comment("ウォーデンに対するショックウェーブのダメージ倍率。",
-                        "デフォルト: 10.0（ウォーデンに対して超特大ダメージ）")
-                .defineInRange("shockwave_warden_damage_multiplier", 10.0, 0.0, 1000.0);
+                        "デフォルト: 100.0（ウォーデンに対して超特大ダメージ）")
+                .defineInRange("shockwave_warden_damage_multiplier", 100.0, 0.0, 1000.0);
 
         SHOCKWAVE_DARKNESS_DURATION = BUILDER
                 .comment("周囲のプレイヤーに付与される暗闇エフェクトの持続時間（tick単位）。",
