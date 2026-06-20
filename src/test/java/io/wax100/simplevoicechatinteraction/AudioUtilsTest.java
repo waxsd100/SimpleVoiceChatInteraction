@@ -38,8 +38,8 @@ class AudioUtilsTest {
     class AudioLevelCalculationTest {
 
         /**
-         * 全サンプルがゼロ（無音）の場合、NEGATIVE_INFINITYを返すことを確認。
-         * RMSが0になるため、dBは定義上 -∞ となる。
+         * 全サンプルがゼロ（無音）の場合、0.0を返すことを確認。
+         * RMSが0になるため、無音扱いとなる。
          */
         @Test
         @DisplayName("無音データ（全ゼロ）の場合、0.0を返す")
@@ -54,7 +54,7 @@ class AudioUtilsTest {
         }
 
         /**
-         * nullが渡された場合、NEGATIVE_INFINITYを返すことを確認。
+         * nullが渡された場合、0.0を返すことを確認。
          * null安全性の検証。
          */
         @Test
@@ -67,7 +67,7 @@ class AudioUtilsTest {
         }
 
         /**
-         * 空配列が渡された場合、NEGATIVE_INFINITYを返すことを確認。
+         * 空配列が渡された場合、0.0を返すことを確認。
          */
         @Test
         @DisplayName("空配列の場合、0.0を返す")
@@ -120,7 +120,7 @@ class AudioUtilsTest {
         }
 
         /**
-         * 非常に小さいRMS（閾値1.0未満）の場合、NEGATIVE_INFINITYを返すことを確認。
+         * 非常に小さいRMS（閾値1.0未満）の場合、0.0を返すことを確認。
          * RMS < 1.0 はほぼ無音として扱われる。
          */
         @Test

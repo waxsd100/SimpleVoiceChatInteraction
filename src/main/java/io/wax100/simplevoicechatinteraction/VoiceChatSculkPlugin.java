@@ -10,9 +10,15 @@ import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import de.maxhenkel.voicechat.api.opus.OpusDecoder;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.biome.Biomes;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.slf4j.Logger;
 
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Simple Voice Chat API プラグイン。
@@ -26,16 +32,16 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     /** デバッグコマンド等からアクセスするためのシングルトンインスタンス */
-    public static VoiceChatSculkPlugin instance;
+    public static volatile VoiceChatSculkPlugin instance;
 
     private final CooldownManager cooldownManager = new CooldownManager();
     private final SculkVibrationEmitter sculkEmitter = new SculkVibrationEmitter();
     private final ShockwaveExecutor shockwaveExecutor = new ShockwaveExecutor();
-    private final java.util.concurrent.ConcurrentHashMap<UUID, OpusDecoder> decoders = new java.util.concurrent.ConcurrentHashMap<>();
-    private final java.util.concurrent.ConcurrentHashMap<UUID, Double> emaDbMap = new java.util.concurrent.ConcurrentHashMap<>();
-    public final java.util.concurrent.ConcurrentHashMap<UUID, UUID> activeMonitors = new java.util.concurrent.ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, OpusDecoder> decoders = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Double> emaDbMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, UUID> activeMonitors = new ConcurrentHashMap<>();
 
-    private VoicechatApi voicechatApi;
+    private volatile VoicechatApi voicechatApi;
 
     @Override
     public String getPluginId() {
@@ -47,17 +53,28 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         this.voicechatApi = api;
         instance = this;
         LOGGER.info("[SimpleVoiceChatInteraction] VoiceChatプラグイン初期化完了");
-        net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
-    @net.minecraftforge.eventbus.api.SubscribeEvent
-    public void onPlayerLoggedOut(net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
+    /**
+     * モニターマップへのアクセサ。
+     * @return activeMonitors マップ
+     */
+    public ConcurrentHashMap<UUID, UUID> getActiveMonitors() {
+        return activeMonitors;
+    }
+
+    @SubscribeEvent
+    public void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         UUID uuid = event.getEntity().getUUID();
         OpusDecoder decoder = decoders.remove(uuid);
         if (decoder != null && !decoder.isClosed()) {
             decoder.close();
         }
         emaDbMap.remove(uuid);
+        activeMonitors.remove(uuid);
+        // このプレイヤーを監視しているモニターも解除
+        activeMonitors.values().removeIf(targetUUID -> targetUUID.equals(uuid));
     }
 
     @Override
@@ -120,7 +137,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         UUID playerUUID = serverPlayer.getUUID();
         MinecraftServer server = serverPlayer.getServer();
         if (server != null) {
-            for (java.util.Map.Entry<UUID, UUID> entry : activeMonitors.entrySet()) {
+            for (Map.Entry<UUID, UUID> entry : activeMonitors.entrySet()) {
                 if (entry.getValue().equals(playerUUID)) {
                     ServerPlayer admin = server.getPlayerList().getPlayer(entry.getKey());
                     if (admin != null) {
@@ -149,14 +166,16 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         }
 
         if (shockwaveReady && actualDb >= Config.shockwaveThreshold) {
-            boolean inDeepDark = serverPlayer.serverLevel().getBiome(serverPlayer.blockPosition()).is(net.minecraft.world.level.biome.Biomes.DEEP_DARK)
-                    || "deeperdarker:otherside".equals(serverPlayer.serverLevel().dimension().location().toString());
-            
-            if (!Config.shockwaveRequireDeepDark || inDeepDark) {
-                cooldownManager.recordShockwaveActivation(playerUUID, now);
-                final double finalDb = actualDb;
-                server.execute(() -> shockwaveExecutor.execute(serverPlayer, finalDb));
-            }
+            cooldownManager.recordShockwaveActivation(playerUUID, now);
+            final double finalDb = actualDb;
+            server.execute(() -> {
+                if (serverPlayer.isRemoved() || serverPlayer.hasDisconnected()) return;
+                boolean inDeepDark = serverPlayer.serverLevel().getBiome(serverPlayer.blockPosition()).is(Biomes.DEEP_DARK)
+                        || "deeperdarker:otherside".equals(serverPlayer.serverLevel().dimension().location().toString());
+                if (!Config.shockwaveRequireDeepDark || inDeepDark) {
+                    shockwaveExecutor.execute(serverPlayer, finalDb);
+                }
+            });
         }
     }
 

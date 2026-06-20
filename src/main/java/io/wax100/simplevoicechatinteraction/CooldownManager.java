@@ -69,6 +69,8 @@ public class CooldownManager {
      * @param shockwaveCooldown 設定されたショックウェーブのクールダウン時間
      */
     public void cleanupIfNeeded(long now, long shockwaveCooldown) {
+        // NOTE: この判定と代入はアトミックではないが、クリーンアップは冪等なので
+        // 複数スレッドが同時に実行しても実害はない（重複クリーンアップが走るだけ）
         if ((now - lastCleanupTime) < COOLDOWN_CLEANUP_INTERVAL_MS) return;
         lastCleanupTime = now;
 

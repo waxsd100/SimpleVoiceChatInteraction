@@ -23,10 +23,10 @@ public class VoiceMeterManager {
         public ServerBossEvent bossEvent;
         public boolean manuallyEnabled;
         public boolean inAncientCity;
-        public double currentDb = 0.0;
-        public int lastDisplayedDb = -999;
-        public boolean needsUpdate = false;
-        public String monitorTargetName = null;
+        public volatile double currentDb = 0.0;
+        public volatile int lastDisplayedDb = -999;
+        public volatile boolean needsUpdate = false;
+        public volatile String monitorTargetName = null;
     }
 
     public static void updateMeter(ServerPlayer player, double dB) {
@@ -129,7 +129,7 @@ public class VoiceMeterManager {
 
         // メモリリーク防止：完全に不要になったデータのクリーンアップ（10秒に1回チェック）
         if (serverPlayer.tickCount % 200 == 0) {
-            if (!data.manuallyEnabled && !data.inAncientCity && data.currentDb <= 0.0) {
+            if (!data.manuallyEnabled && !data.inAncientCity && data.currentDb <= 0.0 && data.monitorTargetName == null) {
                 data.bossEvent.removePlayer(serverPlayer);
                 playerMeters.remove(serverPlayer.getUUID());
             }
@@ -170,7 +170,7 @@ public class VoiceMeterManager {
                 if (data.currentDb >= Config.shockwaveThreshold) {
                     data.bossEvent.setColor(BossEvent.BossBarColor.PURPLE);
                     data.bossEvent.setName(Component.literal(prefix + "§5Voice Volume: " + currentDbInt + " dB (SHOCKWAVE)"));
-                } else if (data.currentDb >= 80.0) {
+                } else if (data.currentDb >= (Config.minimumActivationThreshold + Config.shockwaveThreshold) / 2.0) {
                     data.bossEvent.setColor(BossEvent.BossBarColor.RED);
                     data.bossEvent.setName(Component.literal(prefix + "§cVoice Volume: " + currentDbInt + " dB"));
                 } else if (data.currentDb >= Config.minimumActivationThreshold) {

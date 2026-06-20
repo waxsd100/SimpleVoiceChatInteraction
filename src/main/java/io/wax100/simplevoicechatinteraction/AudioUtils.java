@@ -24,7 +24,7 @@ public final class AudioUtils {
      * </ul>
      *
      * @param pcmData PCMサンプル配列（16ビット符号付き整数）
-     * @return 音声レベル（dB）。null/空の場合は {@link Double#NEGATIVE_INFINITY}
+     * @return 音声レベル（dB SPL相当、0.0〜100.0）。null/空/無音の場合は 0.0
      */
     public static double calculateDbFromPcm(short[] pcmData, double baseValue, double multiplier) {
         if (pcmData == null || pcmData.length == 0) {
@@ -34,13 +34,14 @@ public final class AudioUtils {
         // 振幅の絶対値を配列にコピーしてソート
         short[] absSamples = new short[pcmData.length];
         for (int i = 0; i < pcmData.length; i++) {
-            absSamples[i] = (short) Math.abs(pcmData[i]);
+            absSamples[i] = (short) Math.min(Math.abs((int) pcmData[i]), Short.MAX_VALUE);
         }
         java.util.Arrays.sort(absSamples);
 
-        // 外れ値（突発的なノイズやデジタルポップ音）のみを除外するため、最上位の数サンプル（約1%）だけカット
+        // 外れ値（突発的なノイズやデジタルポップ音）のみを除外するため、最上位の約1%だけカット
         // ※5%カットだと人間の声のピーク成分まで削られてしまい、全体の音量が下がってしまうため
-        int validLength = pcmData.length - 10;
+        int trimCount = Math.max(1, pcmData.length / 100);
+        int validLength = pcmData.length - trimCount;
 
         if (validLength <= 0) {
             return 0.0;
@@ -62,7 +63,7 @@ public final class AudioUtils {
         double dbfs = 20.0 * Math.log10(rms / Short.MAX_VALUE);
         
         // 人間の声のダイナミックレンジに合わせてスケールを調整
-        // Configで設定されたベース値（デフォルト120.0）と乗数（デフォルト2.0）を使用する
+        // Configで設定されたベース値と乗数を使用する
         double scaledDb = baseValue + (dbfs * multiplier);
         return Math.min(100.0, Math.max(0.0, scaledDb));
     }

@@ -60,7 +60,7 @@ public class DebugCommand {
                 .executes(context -> {
                     ServerPlayer admin = context.getSource().getPlayerOrException();
                     if (VoiceChatSculkPlugin.instance != null) {
-                        VoiceChatSculkPlugin.instance.activeMonitors.remove(admin.getUUID());
+                        VoiceChatSculkPlugin.instance.getActiveMonitors().remove(admin.getUUID());
                         VoiceMeterManager.clearMonitorMode(admin);
                         context.getSource().sendSuccess(() -> Component.literal("§a[SVC Monitor] モニタリングを停止しました。"), false);
                     }
@@ -71,7 +71,7 @@ public class DebugCommand {
                             ServerPlayer admin = context.getSource().getPlayerOrException();
                             ServerPlayer target = net.minecraft.commands.arguments.EntityArgument.getPlayer(context, "target");
                             if (VoiceChatSculkPlugin.instance != null) {
-                                VoiceChatSculkPlugin.instance.activeMonitors.put(admin.getUUID(), target.getUUID());
+                                VoiceChatSculkPlugin.instance.getActiveMonitors().put(admin.getUUID(), target.getUUID());
                                 VoiceMeterManager.setMonitorMode(admin, target.getScoreboardName());
                                 context.getSource().sendSuccess(() -> Component.literal("§a[SVC Monitor] " + target.getScoreboardName() + " のマイク音量モニタリングを開始しました。"), false);
                             }
@@ -90,10 +90,9 @@ public class DebugCommand {
                             .orElse(null);
 
                     if (modConfig != null) {
-                        try {
-                            com.electronwill.nightconfig.core.file.CommentedFileConfig fileConfig = 
-                                    com.electronwill.nightconfig.core.file.CommentedFileConfig.builder(modConfig.getFullPath())
-                                    .sync().autosave().build();
+                        try (com.electronwill.nightconfig.core.file.CommentedFileConfig fileConfig = 
+                                com.electronwill.nightconfig.core.file.CommentedFileConfig.builder(modConfig.getFullPath())
+                                    .sync().autosave().build()) {
                             fileConfig.load();
                             modConfig.getSpec().acceptConfig(fileConfig);
                             Config.reloadCachedValues();
