@@ -170,8 +170,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             final double finalDb = actualDb;
             server.execute(() -> {
                 if (serverPlayer.isRemoved() || serverPlayer.hasDisconnected()) return;
-                boolean inDeepDark = serverPlayer.serverLevel().getBiome(serverPlayer.blockPosition()).is(Biomes.DEEP_DARK)
-                        || "deeperdarker:otherside".equals(serverPlayer.serverLevel().dimension().location().toString());
+                boolean inDeepDark = isInDeepDark(serverPlayer);
                 if (!Config.shockwaveRequireDeepDark || inDeepDark) {
                     shockwaveExecutor.execute(serverPlayer, finalDb);
                 }
@@ -219,5 +218,17 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             }
             return 0.0;
         }
+    }
+
+    /**
+     * プレイヤーがディープダークバイオームまたは otherside ディメンションにいるかを判定する。
+     * サーバーメインスレッドで呼ぶこと。
+     *
+     * @param player 判定対象のプレイヤー
+     * @return ディープダークまたは otherside にいる場合 true
+     */
+    public static boolean isInDeepDark(ServerPlayer player) {
+        return player.serverLevel().getBiome(player.blockPosition()).is(Biomes.DEEP_DARK)
+                || "deeperdarker:otherside".equals(player.serverLevel().dimension().location().toString());
     }
 }

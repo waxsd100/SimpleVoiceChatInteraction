@@ -4,7 +4,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.BossEvent;
-import net.minecraft.world.level.biome.Biomes;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -16,6 +15,9 @@ import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Simplevoicechatinteraction.MODID)
 public class VoiceMeterManager {
+
+    /** BossBar進捗計算用の最大dB値 */
+    private static final double MAX_DB = 100.0;
 
     private static final Map<UUID, MeterData> playerMeters = new ConcurrentHashMap<>();
 
@@ -92,8 +94,7 @@ public class VoiceMeterManager {
 
         // 負荷軽減：40tick(2秒)に1回だけ、古代都市（ディープダークバイオーム）判定を行う
         if (serverPlayer.tickCount % 40 == 0) {
-            boolean inDeepDark = serverPlayer.serverLevel().getBiome(serverPlayer.blockPosition()).is(Biomes.DEEP_DARK)
-                    || "deeperdarker:otherside".equals(serverPlayer.serverLevel().dimension().location().toString());
+            boolean inDeepDark = VoiceChatSculkPlugin.isInDeepDark(serverPlayer);
             if (inDeepDark) {
                 if (data == null) {
                     data = createAndRegisterMeter(serverPlayer);
@@ -153,10 +154,7 @@ public class VoiceMeterManager {
             data.bossEvent.addPlayer(player);
             
             // 進捗の計算（0dB 〜 100dB を 0.0 〜 1.0 にマッピング）
-            double minDb = 0.0;
-            double maxDb = 100.0;
-            double progress = (data.currentDb - minDb) / (maxDb - minDb);
-            progress = Math.max(0.0, Math.min(1.0, progress));
+            double progress = Math.max(0.0, Math.min(1.0, data.currentDb / MAX_DB));
             
             data.bossEvent.setProgress((float) progress);
             

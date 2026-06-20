@@ -39,6 +39,16 @@ public class ShockwaveExecutor {
 
     /** ソニックビームの当たり判定の幅（ブロック単位） */
     private static final double BEAM_WIDTH = 2.0;
+    /** 周囲AoEの縮小倍率（配置半径に対する比率） */
+    private static final double RADIAL_RADIUS_SCALE = 0.5;
+    /** ビーム射程の延長倍率（配置半径に対する比率） */
+    private static final double BEAM_LENGTH_SCALE = 3.0;
+    /** ビームダメージの倍率（周囲AoEダメージに対する比率） */
+    private static final float BEAM_DAMAGE_MULTIPLIER = 1.5F;
+    /** ビームによるノックバックの水平方向の強度 */
+    private static final double BEAM_KNOCKBACK_HORIZONTAL = 1.5;
+    /** ビームによるノックバックの垂直方向の強度 */
+    private static final double BEAM_KNOCKBACK_VERTICAL = 0.3;
 
     /**
      * 発動元プレイヤーを中心にソニックショックウェーブを発生させる。
@@ -73,7 +83,7 @@ public class ShockwaveExecutor {
         // ── フェーズ1: 周囲全方位への衝撃波（小規模の円形AoE） ──
         Set<Integer> hitEntityIds = new HashSet<>();
 
-        double radialRadius = radius * 0.5; // 周囲AoEは小さめ
+        double radialRadius = radius * RADIAL_RADIUS_SCALE;
         double radialRadiusSq = radialRadius * radialRadius;
         List<LivingEntity> nearbyEntities = level.getEntitiesOfClass(
                 LivingEntity.class,
@@ -89,7 +99,7 @@ public class ShockwaveExecutor {
         spawnRadialEffects(level, center, centerBlock, radialRadius);
 
         // ── フェーズ2: 前方へのソニックビーム（ウォーデン風・長射程） ──
-        double beamLength = radius * 3.0; // ビームの射程は配置半径の3倍（長め）
+        double beamLength = radius * BEAM_LENGTH_SCALE;
         Vec3 lookDir = sourcePlayer.getLookAngle();
         Vec3 eyePos = sourcePlayer.getEyePosition();
 
@@ -103,26 +113,25 @@ public class ShockwaveExecutor {
                 e -> e != sourcePlayer && !hitEntityIds.contains(e.getId())
         );
 
+        int beamHitCount = 0;
         for (LivingEntity entity : beamCandidates) {
             // エンティティがビーム（円柱）の中にいるか判定
             if (isInBeamCylinder(eyePos, lookDir, beamLength, entity.position().add(0, entity.getBbHeight() / 2.0, 0))) {
-                float beamDamage = damage * 1.5F; // ビームは周囲AoEより高威力
+                float beamDamage = damage * BEAM_DAMAGE_MULTIPLIER;
                 applyDamageAndEffects(level, sourcePlayer, entity, beamDamage, darknessDuration);
                 // ビームの方向にノックバック
-                Vec3 knockback = lookDir.scale(1.5);
-                entity.setDeltaMovement(entity.getDeltaMovement().add(knockback.x, 0.3, knockback.z));
+                Vec3 knockback = lookDir.scale(BEAM_KNOCKBACK_HORIZONTAL);
+                entity.setDeltaMovement(entity.getDeltaMovement().add(knockback.x, BEAM_KNOCKBACK_VERTICAL, knockback.z));
                 entity.hurtMarked = true;
+                beamHitCount++;
             }
         }
 
         spawnBeamEffects(level, eyePos, lookDir, beamLength);
 
-        int totalHits = hitEntityIds.size() + (int) beamCandidates.stream()
-                .filter(e -> isInBeamCylinder(eyePos, lookDir, beamLength, e.position().add(0, e.getBbHeight() / 2.0, 0)))
-                .count();
-
         LOGGER.debug("[SimpleVoiceChatInteraction] ショックウェーブ発動: {} 位置={} AoE半径={} ビーム長={} ヒット数={}",
-                sourcePlayer.getName().getString(), centerBlock, radialRadius, beamLength, totalHits);
+                sourcePlayer.getName().getString(), centerBlock, radialRadius, beamLength,
+                hitEntityIds.size() + beamHitCount);
     }
 
     /**
