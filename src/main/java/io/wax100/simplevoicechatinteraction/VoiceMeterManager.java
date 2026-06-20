@@ -67,6 +67,7 @@ public class VoiceMeterManager {
         MeterData data = playerMeters.get(admin.getUUID());
         if (data != null) {
             data.monitorTargetName = null;
+            data.manuallyEnabled = false; // モニター解除時にメーターも非表示にする
             data.lastDisplayedDb = -999; // 次回必ず更新させる
             data.needsUpdate = true;
             updateBossBar(admin, data);
