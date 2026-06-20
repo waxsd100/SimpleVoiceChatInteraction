@@ -124,6 +124,22 @@ public class ShockwaveExecutor {
                 Vec3 knockback = lookDir.scale(BEAM_KNOCKBACK_HORIZONTAL * knockbackScale);
                 entity.setDeltaMovement(entity.getDeltaMovement().add(knockback.x, BEAM_KNOCKBACK_VERTICAL * knockbackScale, knockback.z));
                 entity.hurtMarked = true;
+                // ビーム被弾プレイヤーへのスタン効果（移動不能＋視界ぼやけ）
+                if (entity instanceof ServerPlayer hitPlayer) {
+                    int stunDuration = darknessDuration; // 暗闇と同じ持続時間
+                    // 移動不能：Slowness レベル200（実質速度ゼロ）
+                    hitPlayer.addEffect(new MobEffectInstance(
+                            MobEffects.MOVEMENT_SLOWDOWN, stunDuration, 200, false, false, true
+                    ));
+                    // 視界ぼやけ：Nausea（ネザーポータル風の歪み演出）
+                    hitPlayer.addEffect(new MobEffectInstance(
+                            MobEffects.CONFUSION, stunDuration, 0, false, false, true
+                    ));
+                    // ジャンプ封じ：Jump Boost をマイナス相当にして脱出防止
+                    hitPlayer.addEffect(new MobEffectInstance(
+                            MobEffects.JUMP, stunDuration, 128, false, false, true
+                    ));
+                }
                 beamHitCount++;
             }
         }
