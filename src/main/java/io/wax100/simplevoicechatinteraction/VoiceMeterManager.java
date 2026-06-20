@@ -71,7 +71,7 @@ public class VoiceMeterManager {
             data.monitorTargetName = null;
             data.manuallyEnabled = false; // モニター解除時にメーターも非表示にする
             data.lastDisplayedDb = -999; // 次回必ず更新させる
-            data.lastDisplayedCooldownDeci = -999;
+            data.lastDisplayedCooldownSec = -999;
             data.needsUpdate = true;
             updateBossBar(admin, data);
         }
@@ -114,15 +114,14 @@ public class VoiceMeterManager {
         // メーターデータが存在しない（手動表示でもなく、古代都市でもなく、発声もしていない）場合は処理スキップ
         if (data == null) return;
 
-        // 負荷軽減：毎tickではなく、2tickごとに減衰処理を行う        // メーターの自然減衰（非アトミック操作を回避するためdecayDbを使用）
+        // 負荷軽減：毎tickではなく、2tickごとに減衰処理を行う
+        // メーターの自然減衰（非アトミック操作を回避するためdecayDbを使用）
         if (serverPlayer.tickCount % 2 == 0) {
             if (data.decayDb(2.0)) {
                 data.needsUpdate = true;
             }
-        }
 
-        // クールダウン中は表示更新のため強制的にneedsUpdateをtrueにする
-        if (serverPlayer.tickCount % 2 == 0) {
+            // ショックウェーブ発動エフェクトのタイマー管理
             if (data.shockwaveVisualTimer > 0) {
                 data.shockwaveVisualTimer -= 2;
                 if (data.shockwaveVisualTimer <= 0) {
@@ -130,6 +129,8 @@ public class VoiceMeterManager {
                     data.needsUpdate = true;
                 }
             }
+
+            // クールダウン表示の更新：秒数が変化した時のみ更新フラグを立てる
             if (VoiceChatSculkPlugin.instance != null) {
                 UUID targetUUID = serverPlayer.getUUID();
                 if (data.monitorTargetName != null && serverPlayer.getServer() != null) {
@@ -140,7 +141,8 @@ public class VoiceMeterManager {
                 }
                 long remainingMs = VoiceChatSculkPlugin.instance.getCooldownManager()
                         .getShockwaveCooldownRemaining(targetUUID, System.currentTimeMillis(), Config.shockwaveCooldown);
-                if (remainingMs > 0) {
+                int currentCooldownSec = (int) Math.ceil(remainingMs / 1000.0);
+                if (currentCooldownSec != data.lastDisplayedCooldownSec) {
                     data.needsUpdate = true;
                 }
             }
@@ -198,14 +200,14 @@ public class VoiceMeterManager {
                 remainingMs = VoiceChatSculkPlugin.instance.getCooldownManager()
                         .getShockwaveCooldownRemaining(targetUUID, System.currentTimeMillis(), Config.shockwaveCooldown);
             }
-            int cooldownDeci = (int) (remainingMs / 100);
+            int cooldownSec = (int) Math.ceil(remainingMs / 1000.0);
 
-            if (currentDbInt != data.lastDisplayedDb || cooldownDeci != data.lastDisplayedCooldownDeci) {
+            if (currentDbInt != data.lastDisplayedDb || cooldownSec != data.lastDisplayedCooldownSec) {
                 data.lastDisplayedDb = currentDbInt;
-                data.lastDisplayedCooldownDeci = cooldownDeci;
+                data.lastDisplayedCooldownSec = cooldownSec;
 
                 String prefix = data.monitorTargetName != null ? "§a[" + data.monitorTargetName + "] " : "";
-                String cooldownText = cooldownDeci > 0 ? String.format(" §8[CD: %.1fs]", cooldownDeci / 10.0) : "";
+                String cooldownText = cooldownSec > 0 ? " §8[CD: " + cooldownSec + "s]" : "";
                 // 発動エフェクト中（1秒間）は紫色に固定
                 if (data.shockwaveVisualTimer > 0) {
                     data.bossEvent.setColor(BossEvent.BossBarColor.PURPLE);
@@ -234,7 +236,7 @@ public class VoiceMeterManager {
         public boolean manuallyEnabled;
         public boolean inAncientCity;
         public volatile int lastDisplayedDb = -999;
-        public volatile int lastDisplayedCooldownDeci = -999;
+        public volatile int lastDisplayedCooldownSec = -999;
         public volatile int shockwaveVisualTimer = 0;
         public volatile boolean needsUpdate = false;
         public volatile String monitorTargetName = null;

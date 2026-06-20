@@ -188,14 +188,22 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         }
 
         if (shockwaveReady && actualDb >= Config.shockwaveThreshold) {
+            // ネットワークスレッドで即座にCDを予約し、連射を防止する
             cooldownManager.recordShockwaveActivation(playerUUID, now);
-            VoiceMeterManager.notifyShockwaveFired(serverPlayer);
             final double finalDb = actualDb;
             server.execute(() -> {
-                if (serverPlayer.isRemoved() || serverPlayer.hasDisconnected()) return;
+                if (serverPlayer.isRemoved() || serverPlayer.hasDisconnected()) {
+                    // 発動できなかった場合はCDを取り消す
+                    cooldownManager.clearShockwaveActivation(playerUUID);
+                    return;
+                }
                 boolean inDeepDark = isInDeepDark(serverPlayer);
                 if (!Config.shockwaveRequireDeepDark || inDeepDark) {
+                    VoiceMeterManager.notifyShockwaveFired(serverPlayer);
                     shockwaveExecutor.execute(serverPlayer, finalDb);
+                } else {
+                    // ディープダーク外で発動条件を満たさなかった場合はCDを取り消す
+                    cooldownManager.clearShockwaveActivation(playerUUID);
                 }
             });
         }

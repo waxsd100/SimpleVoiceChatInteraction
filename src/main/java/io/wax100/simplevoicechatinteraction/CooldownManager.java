@@ -60,6 +60,16 @@ public class CooldownManager {
     }
 
     /**
+     * ショックウェーブのクールダウン予約を取り消す。
+     * ネットワークスレッドでCDを予約した後、メインスレッドで発動条件を満たさなかった場合に呼ぶ。
+     *
+     * @param playerUUID プレイヤーのUUID
+     */
+    public void clearShockwaveActivation(UUID playerUUID) {
+        shockwaveCooldowns.remove(playerUUID);
+    }
+
+    /**
      * ショックウェーブの残りクールダウン時間を取得する。
      *
      * @param playerUUID プレイヤーのUUID
