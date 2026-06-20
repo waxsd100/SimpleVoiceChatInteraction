@@ -45,7 +45,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
 
     @Override
     public String getPluginId() {
-        return Simplevoicechatinteraction.MODID;
+        return SimpleVoiceChatInteraction.MODID;
     }
 
     @Override

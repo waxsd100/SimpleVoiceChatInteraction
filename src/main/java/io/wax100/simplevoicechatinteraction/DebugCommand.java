@@ -16,7 +16,7 @@ import net.minecraftforge.fml.common.Mod;
  * /voice_debug <dB> コマンドを使用して、マイクを使わずに
  * 任意の音量（デシベル）のボイスチャット入力をシミュレートする。
  */
-@Mod.EventBusSubscriber(modid = Simplevoicechatinteraction.MODID)
+@Mod.EventBusSubscriber(modid = SimpleVoiceChatInteraction.MODID)
 public class DebugCommand {
 
     @SubscribeEvent
@@ -85,7 +85,7 @@ public class DebugCommand {
                 .requires(source -> source.hasPermission(2)) // OP権限が必要
                 .executes(context -> {
                     net.minecraftforge.fml.config.ModConfig modConfig = net.minecraftforge.fml.config.ConfigTracker.INSTANCE.fileMap().values().stream()
-                            .filter(config -> config.getModId().equals(Simplevoicechatinteraction.MODID))
+                            .filter(config -> config.getModId().equals(SimpleVoiceChatInteraction.MODID))
                             .findFirst()
                             .orElse(null);
 

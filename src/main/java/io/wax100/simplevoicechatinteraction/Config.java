@@ -11,7 +11,7 @@ import net.minecraftforge.fml.event.config.ModConfigEvent;
  * ボイスチャットによるスカルク振動の挙動とソニックショックウェーブ機能を制御する。
  * 設定値は Voice Chat のネットワークスレッドから読まれるため {@code volatile} で宣言。
  */
-@Mod.EventBusSubscriber(modid = Simplevoicechatinteraction.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@Mod.EventBusSubscriber(modid = SimpleVoiceChatInteraction.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class Config {
 
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();

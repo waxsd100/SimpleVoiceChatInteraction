@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = Simplevoicechatinteraction.MODID)
+@Mod.EventBusSubscriber(modid = SimpleVoiceChatInteraction.MODID)
 public class VoiceMeterManager {
 
     /** BossBar進捗計算用の最大dB値 */

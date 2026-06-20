@@ -18,13 +18,13 @@ import org.slf4j.Logger;
  * ボイスチャットの処理は {@link VoiceChatSculkPlugin} が担当し、
  * Simple Voice Chat API の {@code @ForgeVoicechatPlugin} アノテーションにより自動検出される。
  */
-@Mod(Simplevoicechatinteraction.MODID)
-public class Simplevoicechatinteraction {
+@Mod(SimpleVoiceChatInteraction.MODID)
+public class SimpleVoiceChatInteraction {
 
     public static final String MODID = "simplevoicechatinteraction";
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    public Simplevoicechatinteraction() {
+    public SimpleVoiceChatInteraction() {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.register(this);
 
