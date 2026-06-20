@@ -45,10 +45,10 @@ public class ShockwaveExecutor {
     private static final double BEAM_LENGTH_SCALE = 3.0;
     /** ビームダメージの倍率（周囲AoEダメージに対する比率） */
     private static final float BEAM_DAMAGE_MULTIPLIER = 1.5F;
-    /** ビームによるノックバックの水平方向の強度 */
-    private static final double BEAM_KNOCKBACK_HORIZONTAL = 1.5;
+    /** ビームによるノックバックの水平方向の強度（閾値ギリギリでバニラウォーデン相当） */
+    private static final double BEAM_KNOCKBACK_HORIZONTAL = 2.3;
     /** ビームによるノックバックの垂直方向の強度 */
-    private static final double BEAM_KNOCKBACK_VERTICAL = 0.3;
+    private static final double BEAM_KNOCKBACK_VERTICAL = 0.4;
 
     /**
      * 発動元プレイヤーを中心にソニックショックウェーブを発生させる。
