@@ -126,14 +126,15 @@ public class ShockwaveExecutor {
                 entity.hurtMarked = true;
                 // ビーム被弾プレイヤーへのスタン効果（移動不能＋視界ぼやけ）
                 if (entity instanceof ServerPlayer hitPlayer) {
-                    int stunDuration = darknessDuration; // 暗闇と同じ持続時間
+                    int stunDuration = darknessDuration; // 暗闘と同じ持続時間
                     // 移動不能：Slowness レベル200（実質速度ゼロ）
                     hitPlayer.addEffect(new MobEffectInstance(
                             MobEffects.MOVEMENT_SLOWDOWN, stunDuration, 200, false, false, true
                     ));
-                    // 視界ぼやけ：Nausea（ネザーポータル風の歪み演出）
+                    // 視界封じ：Blindness（視界が数ブロック先まで霧に覆われる）
+                    // Darkness と重なることで、ほぼ何も見えない状態になる
                     hitPlayer.addEffect(new MobEffectInstance(
-                            MobEffects.CONFUSION, stunDuration, 0, false, false, true
+                            MobEffects.BLINDNESS, stunDuration, 0, false, false, true
                     ));
                     // ジャンプ封じ：Jump Boost をマイナス相当にして脱出防止
                     hitPlayer.addEffect(new MobEffectInstance(
