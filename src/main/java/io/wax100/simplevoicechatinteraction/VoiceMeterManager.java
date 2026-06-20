@@ -25,12 +25,31 @@ public class VoiceMeterManager {
         public ServerBossEvent bossEvent;
         public boolean manuallyEnabled;
         public boolean inAncientCity;
-        public volatile double currentDb = 0.0;
+        private double currentDb = 0.0;
         public volatile int lastDisplayedDb = -999;
         public volatile int lastDisplayedCooldownDeci = -999;
         public volatile int shockwaveVisualTimer = 0;
         public volatile boolean needsUpdate = false;
         public volatile String monitorTargetName = null;
+
+        public synchronized void updateDb(double dB) {
+            this.currentDb = Math.max(this.currentDb, dB);
+        }
+
+        public synchronized double getDb() {
+            return this.currentDb;
+        }
+
+        public synchronized boolean decayDb(double amount) {
+            if (this.currentDb > 0.0) {
+                this.currentDb -= amount;
+                if (this.currentDb < 0.0) {
+                    this.currentDb = 0.0;
+                }
+                return true;
+            }
+            return false;
+        }
     }
 
     public static void updateMeter(ServerPlayer player, double dB) {
@@ -38,13 +57,13 @@ public class VoiceMeterManager {
         // もし他プレイヤーをモニター中の場合は、自分自身の音声でメーターを上書きしない
         if (data.monitorTargetName != null) return;
         
-        data.currentDb = Math.max(data.currentDb, dB); // ピークホールド
+        data.updateDb(dB); // スレッドセーフなピークホールド更新
         data.needsUpdate = true;
     }
 
     public static void updateMonitorMeter(ServerPlayer admin, String targetName, double dB) {
         MeterData data = playerMeters.computeIfAbsent(admin.getUUID(), uuid -> createAndRegisterMeter(admin));
-        data.currentDb = Math.max(data.currentDb, dB);
+        data.updateDb(dB);
         data.monitorTargetName = targetName;
         data.needsUpdate = true;
     }
@@ -124,13 +143,11 @@ public class VoiceMeterManager {
         // メーターデータが存在しない（手動表示でもなく、古代都市でもなく、発声もしていない）場合は処理スキップ
         if (data == null) return;
 
-        // 負荷軽減：毎tickではなく、2tickごとに減衰処理を行う
-        if (serverPlayer.tickCount % 2 == 0 && data.currentDb > 0.0) {
-            data.currentDb -= 2.0; // 減衰速度
-            if (data.currentDb < 0.0) {
-                data.currentDb = 0.0;
+        // 負荷軽減：毎tickではなく、2tickごとに減衰処理を行う        // メーターの自然減衰（非アトミック操作を回避するためdecayDbを使用）
+        if (serverPlayer.tickCount % 2 == 0) {
+            if (data.decayDb(2.0)) {
+                data.needsUpdate = true;
             }
-            data.needsUpdate = true;
         }
 
         // クールダウン中は表示更新のため強制的にneedsUpdateをtrueにする
@@ -166,7 +183,8 @@ public class VoiceMeterManager {
 
         // メモリリーク防止：完全に不要になったデータのクリーンアップ（10秒に1回チェック）
         if (serverPlayer.tickCount % 200 == 0) {
-            if (!data.manuallyEnabled && !data.inAncientCity && data.currentDb <= 0.0 && data.monitorTargetName == null) {
+            // 不要になったらBossBarを非表示にする
+            if (!data.manuallyEnabled && !data.inAncientCity && data.getDb() <= 0.0 && data.monitorTargetName == null) {
                 data.bossEvent.removePlayer(serverPlayer);
                 playerMeters.remove(serverPlayer.getUUID());
             }
@@ -189,13 +207,13 @@ public class VoiceMeterManager {
         if (shouldShow) {
             data.bossEvent.addPlayer(player);
             
-            // 進捗の計算（0dB 〜 200dB を 0.0 〜 1.0 にマッピング）
-            double progress = Math.max(0.0, Math.min(1.0, data.currentDb / MAX_DB));
-            
+            double currentDbValue = data.getDb();
+            double progress = Math.max(0.0, Math.min(1.0, currentDbValue / MAX_DB));
             data.bossEvent.setProgress((float) progress);
-            
-            // 文字列生成とパケット送信の負荷を抑えるため、整数値やクールダウンが変わった時だけテキストを更新
-            int currentDbInt = (int) Math.round(data.currentDb);
+
+            // ボスバーの色と名前を更新（変化があった場合のみ）
+            // 小数点以下を四捨五入して表示を安定させる
+            int currentDbInt = (int) Math.round(currentDbValue);
 
             long remainingMs = 0;
             if (VoiceChatSculkPlugin.instance != null) {
@@ -217,18 +235,18 @@ public class VoiceMeterManager {
                 
                 String prefix = data.monitorTargetName != null ? "§a[" + data.monitorTargetName + "] " : "";
                 String cooldownText = cooldownDeci > 0 ? String.format(" §8[CD: %.1fs]", cooldownDeci / 10.0) : "";
-                
+                // 発動エフェクト中（1秒間）は紫色に固定
                 if (data.shockwaveVisualTimer > 0) {
                     data.bossEvent.setColor(BossEvent.BossBarColor.PURPLE);
                     data.bossEvent.setName(Component.literal(prefix + "§5Voice Volume: " + currentDbInt + " dB (SHOCKWAVE)" + cooldownText));
-                } else if (data.currentDb >= Config.shockwaveThreshold) {
+                } else if (currentDbValue >= Config.shockwaveThreshold) {
                     data.bossEvent.setColor(BossEvent.BossBarColor.RED);
                     data.bossEvent.setName(Component.literal(prefix + "§cVoice Volume: " + currentDbInt + " dB" + cooldownText));
-                } else if (data.currentDb >= (Config.minimumActivationThreshold + Config.shockwaveThreshold) / 2.0) {
-                    data.bossEvent.setColor(BossEvent.BossBarColor.RED);
-                    data.bossEvent.setName(Component.literal(prefix + "§cVoice Volume: " + currentDbInt + " dB" + cooldownText));
-                } else if (data.currentDb >= Config.minimumActivationThreshold) {
+                } else if (currentDbValue >= (Config.minimumActivationThreshold + Config.shockwaveThreshold) / 2.0) {
                     data.bossEvent.setColor(BossEvent.BossBarColor.YELLOW);
+                    data.bossEvent.setName(Component.literal(prefix + "§cVoice Volume: " + currentDbInt + " dB" + cooldownText));
+                } else if (currentDbValue >= Config.minimumActivationThreshold) {
+                    data.bossEvent.setColor(BossEvent.BossBarColor.GREEN);
                     data.bossEvent.setName(Component.literal(prefix + "§eVoice Volume: " + currentDbInt + " dB" + cooldownText));
                 } else {
                     data.bossEvent.setColor(BossEvent.BossBarColor.BLUE);
