@@ -221,6 +221,12 @@ public class ShockwaveExecutor {
         // ソニックブーム音（ウォーデン固有の音）
         level.playSound(null, BlockPos.containing(eyePos), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.5F, 0.5F);
 
+        // ビーム到達地点の着弾音
+        Vec3 impactPos = eyePos.add(direction.scale(beamLength));
+        BlockPos impactBlockPos = BlockPos.containing(impactPos);
+        level.playSound(null, impactBlockPos, SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.PLAYERS, 0.8F, 0.3F);
+        level.playSound(null, impactBlockPos, SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 0.6F, 0.5F);
+
         // ビーム沿いにソニックブームパーティクルを配置
         for (double dist = 1.0; dist <= beamLength; dist += 3.0) {
             Vec3 pos = eyePos.add(direction.scale(dist));
