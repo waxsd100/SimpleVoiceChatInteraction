@@ -69,7 +69,7 @@ public final class AudioUtils {
                 // Low-pass filter (カットオフ約3000Hz)
                 double y_lp = prevY_LP + alphaLp * (y_hp - prevY_LP);
 
-                double absVal = Math.min(Math.abs(y_lp), (double) Short.MAX_VALUE);
+                double absVal = Math.min(Math.abs(y_lp), Short.MAX_VALUE);
                 double squared = absVal * absVal;
                 sumSquares += squared;
                 insertTopK(topSquared, squared);

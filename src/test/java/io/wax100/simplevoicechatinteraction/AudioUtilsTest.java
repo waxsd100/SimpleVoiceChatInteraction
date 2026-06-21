@@ -1,5 +1,6 @@
 package io.wax100.simplevoicechatinteraction;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,22 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @DisplayName("AudioUtils テスト")
 class AudioUtilsTest {
+
+    /**
+     * テスト環境ではForgeのConfigシステムが初期化されないため、
+     * {@link Config} のvolatileフィールドに本番のデフォルト値を明示的にセットする。
+     * これがないと {@code trimDenominator = 0} でゼロ除算が発生する。
+     */
+    @BeforeEach
+    void setUpConfigDefaults() {
+        Config.lowpassAlpha = 0.281;
+        Config.highpassAlpha = 0.962;
+        Config.trimDenominator = 100;
+        Config.zcrNoiseThreshold = 0.15;
+        Config.zcrNoisePenalty = 0.1;
+        Config.silenceThreshold = 1.0;
+        Config.scaledDbMax = 200.0;
+    }
 
     // ── 音声レベル計算テスト ─────────────────────────────────────────────
 
