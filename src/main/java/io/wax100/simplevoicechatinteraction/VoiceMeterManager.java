@@ -142,6 +142,7 @@ public class VoiceMeterManager {
                 long remainingMs = VoiceChatSculkPlugin.instance.getCooldownManager()
                         .getShockwaveCooldownRemaining(targetUUID, System.currentTimeMillis(), Config.shockwaveCooldown);
                 int currentCooldownSec = (int) Math.ceil(remainingMs / 1000.0);
+                data.cachedCooldownSec = currentCooldownSec;
                 if (currentCooldownSec != data.lastDisplayedCooldownSec) {
                     data.needsUpdate = true;
                 }
@@ -188,19 +189,8 @@ public class VoiceMeterManager {
             // 小数点以下を四捨五入して表示を安定させる
             int currentDbInt = (int) Math.round(currentDbValue);
 
-            long remainingMs = 0;
-            if (VoiceChatSculkPlugin.instance != null) {
-                UUID targetUUID = player.getUUID();
-                if (data.monitorTargetName != null && player.getServer() != null) {
-                    ServerPlayer targetPlayer = player.getServer().getPlayerList().getPlayerByName(data.monitorTargetName);
-                    if (targetPlayer != null) {
-                        targetUUID = targetPlayer.getUUID();
-                    }
-                }
-                remainingMs = VoiceChatSculkPlugin.instance.getCooldownManager()
-                        .getShockwaveCooldownRemaining(targetUUID, System.currentTimeMillis(), Config.shockwaveCooldown);
-            }
-            int cooldownSec = (int) Math.ceil(remainingMs / 1000.0);
+            // onPlayerTickでキャッシュ済みのCD秒数を使用（重複計算の排除）
+            int cooldownSec = data.cachedCooldownSec;
 
             if (currentDbInt != data.lastDisplayedDb || cooldownSec != data.lastDisplayedCooldownSec) {
                 data.lastDisplayedDb = currentDbInt;
@@ -237,6 +227,7 @@ public class VoiceMeterManager {
         public boolean inAncientCity;
         public volatile int lastDisplayedDb = -999;
         public volatile int lastDisplayedCooldownSec = -999;
+        public volatile int cachedCooldownSec = 0;
         public volatile int shockwaveVisualTimer = 0;
         public volatile boolean needsUpdate = false;
         public volatile String monitorTargetName = null;
