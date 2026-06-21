@@ -150,8 +150,8 @@ All radius and damage values at 100dB are further multiplied by this coefficient
 
 | dB | Real-World Example |
 |:---:|---|
-| **194 dB** | **Theoretical limit of sound in air.** Sound is a pressure wave; at 1 atm, the lowest trough of the wave reaches vacuum — beyond this point the wave can no longer compress and becomes a **shockwave**. |
 | **200 dB** | Exceeds the acoustic limit. Only achievable as a pressure blast (e.g. nuclear detonation at close range). |
+| **194 dB** | **Theoretical limit of sound in air.** Sound is a pressure wave; at 1 atm, the lowest trough of the wave reaches vacuum — beyond this point the wave can no longer compress and becomes a **shockwave**. |
 | **160 – 180 dB** | Lightning strike at close range. Large explosions. The 1883 Krakatoa eruption produced ~180 dB at 160 km away. |
 | **140 – 150 dB** | Standing next to a jet engine at full thrust. **Irreversible hearing damage** — eardrum rupture, internal bleeding, lung damage at sustained exposure. |
 | **130 dB** | Human pain threshold. Physical discomfort becomes unbearable. |
