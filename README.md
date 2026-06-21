@@ -14,8 +14,13 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
   - Beam hits apply knockback that scales proportionally to damage
   - Players hit by the beam are stunned: Slowness Lv.200 (immobilized), Blindness (fog), Jump suppression, and Darkness
   - Stun duration matches config value
+- **Sculk vibrations along the entire shockwave path**
+  - Sculk sensors/shriekers react at the player's position, along the beam (every 8 blocks), and at the impact point
+  - This can chain into Warden summoning in Sculk Shrieker-heavy areas
 - Dynamic shockwave radius and damage based on voice volume (Scales up to 200dB)
   - Exceeding 100dB triggers **Overdrive** mode, massively increasing multipliers
+- **Voice Normalization (AGC)**: Automatically compensates for microphone sensitivity differences between players. Everyone's voice triggers sculk/shockwave at a consistent level regardless of their SVC settings
+- **Wool Dampening**: Surrounding yourself with wool blocks reduces voice volume — just like vanilla sculk sensors are blocked by wool. Up to -20dB when fully enclosed in 6 directions
 - Advanced noise suppression filters (Band-pass filter and Zero-crossing rate penalty to filter out keyboard types and white noise)
 - Bonus damage multipliers against monsters and wardens
 - Optional support for group chat vibrations
@@ -40,6 +45,10 @@ Main configuration keys:
 |---------------------------------------|---------------|--------------------------------------------------------------|
 | `noise_gate_threshold`                | `40.0`        | Noise gate threshold to cut off microphone background noise  |
 | `advanced_noise_filtering`            | `true`        | Enable advanced band-pass & ZCR noise filtering              |
+| `voice_normalization`                 | `true`        | Auto-compensate microphone sensitivity differences           |
+| `voice_normalization_target`          | `70.0`        | Target baseline dB for normalization                         |
+| `wool_dampening`                      | `true`        | Wool blocks reduce voice volume                              |
+| `wool_dampening_max_db`               | `-20.0`       | Max dampening when fully enclosed in wool (dB)               |
 | `minimum_activation_threshold`        | `60`          | Minimum audio level to activate sculk (dB SPL)               |
 | `shockwave_threshold`                 | `85`          | Minimum audio level to trigger the shockwave (dB SPL)        |
 | `shockwave_radius`                    | `2.0`         | Base radius of the shockwave effect at the threshold         |
@@ -50,7 +59,25 @@ Main configuration keys:
 | `shockwave_warden_damage_multiplier`  | `20.0`        | Damage multiplier against the Warden                         |
 | `shockwave_cooldown`                  | `30000`       | Cooldown of the shockwave effect in milliseconds             |
 
-### Shockwave Scaling (Radius)
+### Shockwave & Sculk Reference (Default Config)
+
+The following table shows what happens at each volume level with default settings:
+
+| Volume | Sculk Reaction | Shockwave | AoE Radius | Beam Range | Damage | Notes |
+|--------|:--------------:|:---------:|:----------:|:----------:|:------:|-------|
+| **60 dB** (Normal voice) | ✅ | ❌ | — | — | — | Sculk sensors activate. No shockwave. |
+| **85 dB** (Threshold) | ✅ | ✅ | **1.0 m** | **6.0 m** | **4.0** | Minimum shockwave. Sculk vibrations at player + along beam + impact. |
+| **100 dB** (Loud yell) | ✅ | ✅ | **5.0 m** | **30.0 m** | **20.0** | Maximum before Overdrive. |
+| **200 dB** (Overdrive max) | ✅ | ✅ | **15.0 m** | **90.0 m** | **60.0** | Overdrive ×3.0 applied. Massive area of effect. |
+
+> **Sculk vibration points during shockwave:**
+> - Player position (AoE center)
+> - Every 8 blocks along the beam (matching sculk sensor detection range)
+> - Beam impact point (end of beam)
+>
+> At 100dB, the beam generates ~4 vibration points. At 200dB, up to ~12 points — enough to chain-activate multiple shriekers and summon the Warden.
+
+### Shockwave Scaling Formula
 
 The shockwave scales dynamically based on voice volume. It starts scaling from the `shockwave_threshold` (85dB) up to 100dB linearly. Beyond 100dB, it scales using the Overdrive multiplier up to 200dB.
 
