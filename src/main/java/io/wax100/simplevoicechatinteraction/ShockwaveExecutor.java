@@ -108,7 +108,7 @@ public class ShockwaveExecutor {
         if (overdriveProgress > 0.0) {
             double overdriveMult = 1.0 + (Config.shockwaveOverdriveMultiplier - 1.0) * overdriveProgress;
             radius *= overdriveMult;
-            damage *= overdriveMult;
+            damage *= (float) overdriveMult;
         }
         int darknessDuration = Config.shockwaveDarknessDuration;
 

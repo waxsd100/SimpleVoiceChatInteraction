@@ -22,6 +22,14 @@ public class Config {
     public static final ForgeConfigSpec.DoubleValue MICROPHONE_MULTIPLIER;
     public static final ForgeConfigSpec.DoubleValue NOISE_GATE_THRESHOLD;
     public static final ForgeConfigSpec.BooleanValue ADVANCED_NOISE_FILTERING;
+    // 上級者設定: 音声処理パラメータ
+    public static final ForgeConfigSpec.DoubleValue LOWPASS_ALPHA;
+    public static final ForgeConfigSpec.DoubleValue HIGHPASS_ALPHA;
+    public static final ForgeConfigSpec.IntValue TRIM_DENOMINATOR;
+    public static final ForgeConfigSpec.DoubleValue ZCR_NOISE_THRESHOLD;
+    public static final ForgeConfigSpec.DoubleValue ZCR_NOISE_PENALTY;
+    public static final ForgeConfigSpec.DoubleValue SILENCE_THRESHOLD;
+    public static final ForgeConfigSpec.DoubleValue SCALED_DB_MAX;
     public static final ForgeConfigSpec.BooleanValue VOICE_NORMALIZATION;
     public static final ForgeConfigSpec.DoubleValue VOICE_NORMALIZATION_TARGET;
     public static final ForgeConfigSpec.DoubleValue VOICE_NORMALIZATION_MAX_OFFSET;
@@ -59,6 +67,14 @@ public class Config {
     public static volatile double microphoneMultiplier;
     public static volatile double noiseGateThreshold;
     public static volatile boolean advancedNoiseFiltering;
+    // 上級者設定: 音声処理パラメータ
+    public static volatile double lowpassAlpha;
+    public static volatile double highpassAlpha;
+    public static volatile int trimDenominator;
+    public static volatile double zcrNoiseThreshold;
+    public static volatile double zcrNoisePenalty;
+    public static volatile double silenceThreshold;
+    public static volatile double scaledDbMax;
     // 音声正規化
     public static volatile boolean voiceNormalization;
     public static volatile double voiceNormalizationTarget;
@@ -151,6 +167,61 @@ public class Config {
                         "キーボードの打鍵音などの高周波ノイズを自動的に計算から除外します。",
                         "デフォルト: true")
                 .define("advanced_noise_filtering", true);
+        BUILDER.pop();
+
+        BUILDER.push("advanced_audio_processing");
+        LOWPASS_ALPHA = BUILDER
+                .comment("---------------------------------------------------------",
+                        "【上級者設定】ローパスフィルタの係数（カットオフ約3000Hz、サンプリングレート48000Hz前提）。",
+                        "値を下げると高周波成分がより強くカットされます。",
+                        "範囲: 0.01～1.0。デフォルト: 0.281")
+                .defineInRange("lowpass_alpha", 0.281, 0.01, 1.0);
+
+        HIGHPASS_ALPHA = BUILDER
+                .comment("---------------------------------------------------------",
+                        "【上級者設定】ハイパスフィルタの係数（カットオフ約300Hz、サンプリングレート48000Hz前提）。",
+                        "値を下げると低周波成分がより多く通過します。",
+                        "範囲: 0.01～1.0。デフォルト: 0.962")
+                .defineInRange("highpass_alpha", 0.962, 0.01, 1.0);
+
+        TRIM_DENOMINATOR = BUILDER
+                .comment("---------------------------------------------------------",
+                        "【上級者設定】外れ値除外の分母。上位 1/N のサンプルをRMS計算から除外する。",
+                        "値を小さくすると、より多くのサンプルが外れ値として除外される（より攻撃的にフィルタ）。",
+                        "範囲: 2～10000。デフォルト: 100（上位約1%をカット）")
+                .defineInRange("trim_denominator", 100, 2, 10000);
+
+        ZCR_NOISE_THRESHOLD = BUILDER
+                .comment("---------------------------------------------------------",
+                        "【上級者設定】ゼロ交差率（ZCR）のノイズ判定閾値。",
+                        "この値を超えるZCR（高周波数成分が支配的な音、ホワイトノイズや打鍵音等）は",
+                        "zcr_noise_penalty の倍率でペナルティが適用される。",
+                        "範囲: 0.0～1.0。デフォルト: 0.15")
+                .defineInRange("zcr_noise_threshold", 0.15, 0.0, 1.0);
+
+        ZCR_NOISE_PENALTY = BUILDER
+                .comment("---------------------------------------------------------",
+                        "【上級者設定】ZCRノイズ判定時の音量ペナルティ倍率。",
+                        "ZCRが閾値を超えた場合、RMSにこの係数を乗算して音量を下げる。",
+                        "0.1 = 音量を10%に（90%カット）。1.0 = ペナルティなし。",
+                        "範囲: 0.0～1.0。デフォルト: 0.1")
+                .defineInRange("zcr_noise_penalty", 0.1, 0.0, 1.0);
+
+        SILENCE_THRESHOLD = BUILDER
+                .comment("---------------------------------------------------------",
+                        "【上級者設定】無音判定のRMS閾値。",
+                        "RMS（二乗平均平方根）がこの値未満の場合、無音（0dB）として扱う。",
+                        "値を上げると、より小さい音が無音として扱われる。",
+                        "範囲: 0.0～1000.0。デフォルト: 1.0")
+                .defineInRange("silence_threshold", 1.0, 0.0, 1000.0);
+
+        SCALED_DB_MAX = BUILDER
+                .comment("---------------------------------------------------------",
+                        "【上級者設定】dBスケールの上限値。",
+                        "計算されたdB値はこの値でクランプされる。",
+                        "音量メーターのBossBarの最大値にも使用される。",
+                        "範囲: 50.0～500.0。デフォルト: 200.0")
+                .defineInRange("scaled_db_max", 200.0, 50.0, 500.0);
         BUILDER.pop();
 
         BUILDER.push("voice_normalization");
@@ -341,6 +412,14 @@ public class Config {
         microphoneMultiplier = MICROPHONE_MULTIPLIER.get();
         noiseGateThreshold = NOISE_GATE_THRESHOLD.get();
         advancedNoiseFiltering = ADVANCED_NOISE_FILTERING.get();
+
+        lowpassAlpha = LOWPASS_ALPHA.get();
+        highpassAlpha = HIGHPASS_ALPHA.get();
+        trimDenominator = TRIM_DENOMINATOR.get();
+        zcrNoiseThreshold = ZCR_NOISE_THRESHOLD.get();
+        zcrNoisePenalty = ZCR_NOISE_PENALTY.get();
+        silenceThreshold = SILENCE_THRESHOLD.get();
+        scaledDbMax = SCALED_DB_MAX.get();
 
         voiceNormalization = VOICE_NORMALIZATION.get();
         voiceNormalizationTarget = VOICE_NORMALIZATION_TARGET.get();

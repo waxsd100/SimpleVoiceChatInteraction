@@ -60,6 +60,15 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     private static final double EMA_ALPHA = 0.35;
 
     /**
+     * EMAの陳腐化閾値（ミリ秒）。
+     * 最後の有効パケットからこの時間が経過した場合、EMAをリセットする。
+     * ノイズゲートで弾かれた間EMAは更新されないため、長時間の無音後に
+     * 再発話すると古い値とブレンドされて不正確になるのを防ぐ。
+     * 1000ms ≒ 約50パケット分の空白。
+     */
+    private static final long EMA_STALE_THRESHOLD_MS = 1000L;
+
+    /**
      * ウール防音チェックの更新間隔（tick）。20tick = 1秒。
      */
     private static final int WOOL_CHECK_INTERVAL = 20;
@@ -82,6 +91,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     private final ShockwaveExecutor shockwaveExecutor = new ShockwaveExecutor();
     private final ConcurrentHashMap<UUID, OpusDecoder> decoders = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Double> emaDbMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Long> emaLastUpdateMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, UUID> activeMonitors = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, BaselineData> voiceBaselineMap = new ConcurrentHashMap<>();
     /**
@@ -142,6 +152,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             decoder.close();
         }
         emaDbMap.remove(uuid);
+        emaLastUpdateMap.remove(uuid);
         voiceBaselineMap.remove(uuid);
         woolDampeningMap.remove(uuid);
         activeMonitors.remove(uuid);
@@ -358,8 +369,10 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             }
 
             // 環境音などの低音量ノイズゲート（Configで指定した閾値未満は無音扱い）
+            // ノイズゲートで弾いた場合はEMAに0を送らず、前の値を保持する。
+            // 0をEMAに入れると連続無音フレームでEMAが急速にゼロに引きずられるため。
             if (rawDb < Config.noiseGateThreshold) {
-                rawDb = 0.0;
+                return 0.0;
             }
 
             // 音声正規化用: 発話時の生データからベースラインを追跡
@@ -379,18 +392,25 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             final double finalRawDb = rawDb;
 
             // 指数移動平均 (EMA) を用いて、突発的なポップノイズや外れ値を平滑化する
-            double emaDb = emaDbMap.compute(playerUUID, (k, prev) -> {
-                if (prev == null || Double.isNaN(prev)) return finalRawDb;
+            // ノイズゲートで弾かれた間はEMAが更新されず古い値が残るため、
+            // 一定時間以上経過していたらリセットして新しい値から再スタートする
+            long now = System.nanoTime();
+            Long lastUpdate = emaLastUpdateMap.get(playerUUID);
+            boolean stale = (lastUpdate == null)
+                    || ((now - lastUpdate) / 1_000_000L > EMA_STALE_THRESHOLD_MS);
+            emaLastUpdateMap.put(playerUUID, now);
+
+            return emaDbMap.compute(playerUUID, (k, prev) -> {
+                if (prev == null || Double.isNaN(prev) || stale) return finalRawDb;
                 double next = (EMA_ALPHA * finalRawDb) + ((1.0 - EMA_ALPHA) * prev);
                 return Double.isNaN(next) ? 0.0 : next;
             });
-
-            return emaDb;
         } catch (Exception e) {
             LOGGER.warn("[SimpleVoiceChatInteraction] 音声レベルの計算に失敗しました", e);
             // デコーダーが壊れた可能性があるので再生成のために削除する
             decoders.remove(playerUUID);
             emaDbMap.remove(playerUUID);
+            emaLastUpdateMap.remove(playerUUID);
             if (!decoder.isClosed()) {
                 decoder.close();
             }

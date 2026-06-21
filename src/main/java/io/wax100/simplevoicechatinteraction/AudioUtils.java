@@ -2,26 +2,11 @@ package io.wax100.simplevoicechatinteraction;
 
 
 /**
- * Minecraft クラスに依存しない純粋なユーティリティメソッド群。
+ * 音声レベル計算ユーティリティクラス。
  * <p>
- * 音声レベル計算やクールダウン判定など、Minecraft のレジストリ初期化なしに
- * テスト可能なロジックをここに集約する。
+ * 音声処理の上級者設定パラメータは {@link Config} のvolatileフィールドから読み取る。
  */
 public final class AudioUtils {
-
-    // フィルタ用の定数 (サンプリングレート 48000Hz 前提)
-    private static final double ALPHA_LP = 0.281; // Low-pass at 3000 Hz
-    private static final double ALPHA_HP = 0.962; // High-pass at 300 Hz
-
-    // 外れ値除外: 上位約1%のサンプルをカット
-    private static final int TRIM_DENOMINATOR = 100;
-    // ZCR（ゼロ交差率）によるノイズ判定
-    private static final double ZCR_NOISE_THRESHOLD = 0.15;
-    private static final double ZCR_NOISE_PENALTY = 0.1;
-    // RMSがこの値未満の場合は無音扱い
-    private static final double SILENCE_THRESHOLD = 1.0;
-    // dBスケール上限
-    private static final double SCALED_DB_MAX = 200.0;
 
     private AudioUtils() {
         // ユーティリティクラスのためインスタンス化不可
@@ -31,10 +16,10 @@ public final class AudioUtils {
      * PCM（パルス符号変調）サンプル配列から音声レベル（dB）を計算する。
      * <p>
      * RMS（二乗平均平方根）を算出し、フルスケール基準でdBに変換する。
-     * 外れ値（上位約1%のサンプル）はO(n)のtop-k挿入で除外する。
+     * 外れ値（上位約 1/trim_denominator のサンプル）はO(n)のtop-k挿入で除外する。
      * <ul>
      *   <li>0 dB = 最大音量（全サンプルが {@link Short#MAX_VALUE}）</li>
-     *   <li>-∞ dB = 無音（RMS が 1.0 未満）</li>
+     *   <li>-∞ dB = 無音（RMS が silence_threshold 未満）</li>
      * </ul>
      * <p>
      * 中間配列のアロケーションを最小化し、ソートを排除した軽量実装。
@@ -43,7 +28,7 @@ public final class AudioUtils {
      * @param baseValue dB変換のベース値
      * @param multiplier dB変換の乗数
      * @param advancedNoiseFiltering バンドパスフィルタとZCRノイズ判定を適用するか
-     * @return 音声レベル（dB SPL相当、0.0〜200.0）。null/空/無音の場合は 0.0
+     * @return 音声レベル（dB SPL相当、0.0〜scaled_db_max）。null/空/無音の場合は 0.0
      */
     public static double calculateDbFromPcm(short[] pcmData, double baseValue, double multiplier,
                                             boolean advancedNoiseFiltering) {
@@ -51,9 +36,19 @@ public final class AudioUtils {
             return 0.0;
         }
 
+        // Config上級者設定をローカル変数にキャッシュ
+        // （volatile読み取りは1回のみ、タイトループでのオーバーヘッド排除＆計算中の一貫性を保証）
+        final double alphaLp = Config.lowpassAlpha;
+        final double alphaHp = Config.highpassAlpha;
+        final int trimDenom = Config.trimDenominator;
+        final double zcrThreshold = Config.zcrNoiseThreshold;
+        final double zcrPenalty = Config.zcrNoisePenalty;
+        final double silenceThresh = Config.silenceThreshold;
+        final double dbMax = Config.scaledDbMax;
+
         int length = pcmData.length;
-        // 外れ値除外数（上位約1%）
-        int trimCount = Math.max(1, length / TRIM_DENOMINATOR);
+        // 外れ値除外数（上位約 1/trimDenominator）
+        int trimCount = Math.max(1, length / trimDenom);
         // 上位trimCount個の二乗値を昇順で保持（topSquared[0]が最小）
         double[] topSquared = new double[trimCount];
         double sumSquares = 0.0;
@@ -70,9 +65,9 @@ public final class AudioUtils {
             for (int i = 0; i < length; i++) {
                 double x = pcmData[i];
                 // High-pass filter (カットオフ約300Hz)
-                double y_hp = ALPHA_HP * (prevY_HP + x - prevX);
+                double y_hp = alphaHp * (prevY_HP + x - prevX);
                 // Low-pass filter (カットオフ約3000Hz)
-                double y_lp = prevY_LP + ALPHA_LP * (y_hp - prevY_LP);
+                double y_lp = prevY_LP + alphaLp * (y_hp - prevY_LP);
 
                 double absVal = Math.min(Math.abs(y_lp), (double) Short.MAX_VALUE);
                 double squared = absVal * absVal;
@@ -91,8 +86,8 @@ public final class AudioUtils {
 
             // ZCRが高い（高周波数成分が支配的、ホワイトノイズや打鍵音）場合は減衰
             double zcr = (double) zeroCrossings / length;
-            if (zcr > ZCR_NOISE_THRESHOLD) {
-                noisePenalty = ZCR_NOISE_PENALTY; // 音量を大幅に下げる
+            if (zcr > zcrThreshold) {
+                noisePenalty = zcrPenalty; // 音量を大幅に下げる
             }
         } else {
             // フィルタリング無効時: PCMデータから直接計算（中間配列アロケーションなし）
@@ -104,7 +99,7 @@ public final class AudioUtils {
             }
         }
 
-        // 外れ値（突発的なノイズやデジタルポップ音）のみを除外するため、最上位の約1%だけカット
+        // 外れ値（突発的なノイズやデジタルポップ音）のみを除外するため、最上位だけカット
         // ※5%カットだと人間の声のピーク成分まで削られてしまい、全体の音量が下がってしまうため
         int validLength = length - trimCount;
         if (validLength <= 0) {
@@ -115,7 +110,7 @@ public final class AudioUtils {
         for (double sq : topSquared) {
             topSum += sq;
         }
-        
+
         double variance = sumSquares - topSum;
         // 浮動小数点の演算誤差でマイナスになった場合は無音扱いにして NaN を防ぐ
         if (variance <= 0.0) {
@@ -127,7 +122,7 @@ public final class AudioUtils {
         rms *= noisePenalty;
 
         // 事実上の無音
-        if (rms < SILENCE_THRESHOLD) {
+        if (rms < silenceThresh) {
             return 0.0;
         }
 
@@ -138,7 +133,7 @@ public final class AudioUtils {
         // 人間の声のダイナミックレンジに合わせてスケールを調整
         // Configで設定されたベース値と乗数を使用する
         double scaledDb = baseValue + (dbfs * multiplier);
-        return Math.min(SCALED_DB_MAX, Math.max(0.0, scaledDb));
+        return Math.min(dbMax, Math.max(0.0, scaledDb));
     }
 
     /**

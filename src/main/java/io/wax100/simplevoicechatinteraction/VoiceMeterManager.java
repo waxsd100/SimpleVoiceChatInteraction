@@ -16,10 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Mod.EventBusSubscriber(modid = SimpleVoiceChatInteraction.MODID)
 public class VoiceMeterManager {
 
-    /**
-     * BossBar進捗計算用の最大dB値
-     */
-    private static final double MAX_DB = 200.0;
     private static final int SHOCKWAVE_VISUAL_TICKS = 20;
     private static final double DECAY_PER_INTERVAL = 2.0;
     private static final int DEEP_DARK_CHECK_INTERVAL = 40;
@@ -190,7 +186,7 @@ public class VoiceMeterManager {
             data.bossEvent.addPlayer(player);
 
             double currentDbValue = data.getDb();
-            double progress = Math.max(0.0, Math.min(1.0, currentDbValue / MAX_DB));
+            double progress = Math.max(0.0, Math.min(1.0, currentDbValue / Config.scaledDbMax));
             data.bossEvent.setProgress((float) progress);
 
             // ボスバーの色と名前を更新（変化があった場合のみ）
