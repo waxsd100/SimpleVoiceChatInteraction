@@ -89,6 +89,24 @@ The shockwave scales dynamically based on voice volume. It starts scaling from t
 - Minimum volume (Threshold): **6.0** blocks
 - Maximum volume (100dB): **30.0** blocks
 
+**Radial AoE Damage** (At Default Settings)
+
+| Target Entity | Multiplier | 85 dB (Threshold) | 100 dB | 200 dB (Overdrive) |
+|---|:---:|:---:|:---:|:---:|
+| **Player** | `0.5x` | **2.0** (❤️×1) | **10.0** (❤️×5) | **30.0** (❤️×15) |
+| **Normal (Animals, etc)** | `1.0x` | **4.0** (❤️×2) | **20.0** (❤️×10) | **60.0** (❤️×30) |
+| **Monster** | `5.0x` | **20.0** (❤️×10) | **100.0** (❤️×50) | **300.0** (❤️×150) |
+| **Warden** | `20.0x` | **80.0** (❤️×40) | **400.0** (❤️×200) | **1200.0** (❤️×600) |
+
+**Sonic Beam Damage (1.5x AoE)** (At Default Settings)
+
+| Target Entity | Multiplier | 85 dB (Threshold) | 100 dB | 200 dB (Overdrive) |
+|---|:---:|:---:|:---:|:---:|
+| **Player** | `0.5x` | **3.0** (❤️×1.5) | **15.0** (❤️×7.5) | **45.0** (❤️×22.5) |
+| **Normal (Animals, etc)** | `1.0x` | **6.0** (❤️×3) | **30.0** (❤️×15) | **90.0** (❤️×45) |
+| **Monster** | `5.0x` | **30.0** (❤️×15) | **150.0** (❤️×75) | **450.0** (❤️×225) |
+| **Warden** | `20.0x` | **120.0** (❤️×60) | **600.0** (❤️×300) | **1800.0** (❤️×900) |
+
 ### Voice Volume (dB SPL) Reference
 
 - **200 dB**: Absolute maximum limit of the system.
