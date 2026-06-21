@@ -43,15 +43,39 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     private static final double BASELINE_ALPHA = 0.02;
 
     /**
+     * 適応的学習率の分子。effectiveAlpha = max(BASELINE_ALPHA, NUMERATOR / (n + 1))
+     */
+    private static final double ADAPTIVE_ALPHA_NUMERATOR = 2.0;
+
+    /**
      * 正規化が有効になるまでの最小サンプル数。
      * 約100パケット（約2秒の発話）でキャリブレーション完了。
      */
     private static final int BASELINE_MIN_SAMPLES = 100;
 
     /**
+     * EMAの平滑化係数。1パケットの突発的スパイクを除去しつつ、
+     * 数パケットかけて滑らかに音量変化を反映する。
+     */
+    private static final double EMA_ALPHA = 0.35;
+
+    /**
+     * ウール防音チェックの更新間隔（tick）。20tick = 1秒。
+     */
+    private static final int WOOL_CHECK_INTERVAL = 20;
+
+    /**
      * デバッグコマンド等からアクセスするためのシングルトンインスタンス
      */
     public static volatile VoiceChatSculkPlugin instance;
+
+    /**
+     * 音声正規化のベースラインデータ。イミュータブルでスレッド安全。
+     *
+     * @param ema         ベースラインEMA値
+     * @param sampleCount 累積サンプル数
+     */
+    record BaselineData(double ema, double sampleCount) {}
 
     private final CooldownManager cooldownManager = new CooldownManager();
     private final SculkVibrationEmitter sculkEmitter = new SculkVibrationEmitter();
@@ -59,11 +83,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     private final ConcurrentHashMap<UUID, OpusDecoder> decoders = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Double> emaDbMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, UUID> activeMonitors = new ConcurrentHashMap<>();
-    /**
-     * 音声正規化用ベースラインデータ。
-     * double[0] = ベースラインEMA値、double[1] = サンプル数
-     */
-    private final ConcurrentHashMap<UUID, double[]> voiceBaselineMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, BaselineData> voiceBaselineMap = new ConcurrentHashMap<>();
     /**
      * ウール防音のdBオフセットキャッシュ。
      * メインスレッドのtickで更新、ネットワークスレッドのprocessAudioInteractionで読み取り。
@@ -139,7 +159,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         if (!Config.woolDampening) return;
 
         // 1秒ごとに更新（負荷軽減）
-        if (serverPlayer.tickCount % 20 != 0) return;
+        if (serverPlayer.tickCount % WOOL_CHECK_INTERVAL != 0) return;
 
         double dampening = calculateWoolDampening(serverPlayer);
         if (dampening < 0.0) {
@@ -181,6 +201,19 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         return (woolCount / 6.0) * Config.woolDampeningMaxDb;
     }
 
+    /**
+     * 音量修飾子（倍率）をdBに変換して適用する。
+     * multiplierが0以下の場合は負の値を返し、呼び出し側で無音として処理する。
+     *
+     * @param currentDb 現在のdB値
+     * @param multiplier 音量倍率（0以下で無音）
+     * @return 修飾後のdB値。multiplierが0以下の場合は -1.0
+     */
+    private static double applyVolumeModifier(double currentDb, double multiplier) {
+        if (multiplier <= 0.0) return -1.0;
+        return currentDb + 20.0 * Math.log10(multiplier);
+    }
+
     @Override
     public void registerEvents(EventRegistration registration) {
         registration.registerEvent(MicrophonePacketEvent.class, this::onMicrophonePacket);
@@ -216,9 +249,9 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         // ゲームプレイ修飾子（囁き・スニーク・ダッシュ）より前に適用
         double normalizedDb = dB;
         if (Config.voiceNormalization) {
-            double[] baseline = voiceBaselineMap.get(serverPlayer.getUUID());
-            if (baseline != null && baseline[1] >= BASELINE_MIN_SAMPLES) {
-                double offset = Config.voiceNormalizationTarget - baseline[0];
+            BaselineData baseline = voiceBaselineMap.get(serverPlayer.getUUID());
+            if (baseline != null && baseline.sampleCount() >= BASELINE_MIN_SAMPLES) {
+                double offset = Config.voiceNormalizationTarget - baseline.ema();
                 // 極端な補正を防止
                 offset = Math.max(-Config.voiceNormalizationMaxOffset, Math.min(Config.voiceNormalizationMaxOffset, offset));
                 normalizedDb = Math.max(0.0, dB + offset);
@@ -234,26 +267,18 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
                 actualDb = Math.max(0.0, actualDb + woolOffset);
             }
         }
-        if (isWhispering) {
-            double multiplier = Config.whisperVolumeMultiplier;
-            if (multiplier <= 0.0) {
-                return; // 無音
-            }
-            actualDb += 20.0 * Math.log10(multiplier);
-        }
 
+        // ── 音量修飾子: 囁き・スニーク・ダッシュ ──
+        if (isWhispering) {
+            actualDb = applyVolumeModifier(actualDb, Config.whisperVolumeMultiplier);
+            if (actualDb < 0.0) return; // 無音
+        }
         if (serverPlayer.isCrouching()) {
-            double multiplier = Config.sneakVolumeMultiplier;
-            if (multiplier <= 0.0) {
-                return; // 無音
-            }
-            actualDb += 20.0 * Math.log10(multiplier);
+            actualDb = applyVolumeModifier(actualDb, Config.sneakVolumeMultiplier);
+            if (actualDb < 0.0) return;
         } else if (serverPlayer.isSprinting()) {
-            double multiplier = Config.sprintVolumeMultiplier;
-            if (multiplier <= 0.0) {
-                return; // 無音
-            }
-            actualDb += 20.0 * Math.log10(multiplier);
+            actualDb = applyVolumeModifier(actualDb, Config.sprintVolumeMultiplier);
+            if (actualDb < 0.0) return;
         }
 
         // ボイスメーターの更新
@@ -324,7 +349,9 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
                 return 0.0;
             }
 
-            double rawDb = AudioUtils.calculateDbFromPcm(pcmData, Config.microphoneBaseValue, Config.microphoneMultiplier);
+            double rawDb = AudioUtils.calculateDbFromPcm(
+                    pcmData, Config.microphoneBaseValue, Config.microphoneMultiplier,
+                    Config.advancedNoiseFiltering);
 
             // 環境音などの低音量ノイズゲート（Configで指定した閾値未満は無音扱い）
             if (rawDb < Config.noiseGateThreshold) {
@@ -336,24 +363,21 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             if (rawDb > 0.0 && Config.voiceNormalization) {
                 final double baselineRawDb = rawDb;
                 voiceBaselineMap.compute(playerUUID, (k, prev) -> {
-                    if (prev == null) return new double[]{baselineRawDb, 1.0};
+                    if (prev == null) return new BaselineData(baselineRawDb, 1.0);
                     // 適応的学習率: 初期は高速で外れ値の影響を素早く希釈し、安定後は中速で追従
-                    // sampleCount=1→alpha=1.0, =10→0.2, =50→0.04, =100+→0.02(下限)
-                    double effectiveAlpha = Math.max(BASELINE_ALPHA, 2.0 / (prev[1] + 1.0));
-                    prev[0] += effectiveAlpha * (baselineRawDb - prev[0]);
-                    prev[1] += 1.0;
-                    return prev;
+                    double effectiveAlpha = Math.max(BASELINE_ALPHA,
+                            ADAPTIVE_ALPHA_NUMERATOR / (prev.sampleCount() + 1.0));
+                    double newEma = prev.ema() + effectiveAlpha * (baselineRawDb - prev.ema());
+                    return new BaselineData(newEma, prev.sampleCount() + 1.0);
                 });
             }
 
             final double finalRawDb = rawDb;
 
             // 指数移動平均 (EMA) を用いて、突発的なポップノイズや外れ値を平滑化する
-            // alpha = 0.35 (数パケットかけて滑らかに音量が変化し、1パケットだけの突発的なスパイクを除去)
-            double alpha = 0.35;
             double emaDb = emaDbMap.compute(playerUUID, (k, prev) -> {
                 if (prev == null) return finalRawDb;
-                return (alpha * finalRawDb) + ((1.0 - alpha) * prev);
+                return (EMA_ALPHA * finalRawDb) + ((1.0 - EMA_ALPHA) * prev);
             });
 
             return emaDb;

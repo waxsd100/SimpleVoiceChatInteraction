@@ -13,6 +13,16 @@ public final class AudioUtils {
     private static final double ALPHA_LP = 0.281; // Low-pass at 3000 Hz
     private static final double ALPHA_HP = 0.962; // High-pass at 300 Hz
 
+    // 外れ値除外: 上位約1%のサンプルをカット
+    private static final int TRIM_DENOMINATOR = 100;
+    // ZCR（ゼロ交差率）によるノイズ判定
+    private static final double ZCR_NOISE_THRESHOLD = 0.15;
+    private static final double ZCR_NOISE_PENALTY = 0.1;
+    // RMSがこの値未満の場合は無音扱い
+    private static final double SILENCE_THRESHOLD = 1.0;
+    // dBスケール上限
+    private static final double SCALED_DB_MAX = 200.0;
+
     private AudioUtils() {
         // ユーティリティクラスのためインスタンス化不可
     }
@@ -30,22 +40,26 @@ public final class AudioUtils {
      * 中間配列のアロケーションを最小化し、ソートを排除した軽量実装。
      *
      * @param pcmData PCMサンプル配列（16ビット符号付き整数）
+     * @param baseValue dB変換のベース値
+     * @param multiplier dB変換の乗数
+     * @param advancedNoiseFiltering バンドパスフィルタとZCRノイズ判定を適用するか
      * @return 音声レベル（dB SPL相当、0.0〜200.0）。null/空/無音の場合は 0.0
      */
-    public static double calculateDbFromPcm(short[] pcmData, double baseValue, double multiplier) {
+    public static double calculateDbFromPcm(short[] pcmData, double baseValue, double multiplier,
+                                            boolean advancedNoiseFiltering) {
         if (pcmData == null || pcmData.length == 0) {
             return 0.0;
         }
 
         int length = pcmData.length;
         // 外れ値除外数（上位約1%）
-        int trimCount = Math.max(1, length / 100);
+        int trimCount = Math.max(1, length / TRIM_DENOMINATOR);
         // 上位trimCount個の二乗値を昇順で保持（topSquared[0]が最小）
         double[] topSquared = new double[trimCount];
         double sumSquares = 0.0;
         double noisePenalty = 1.0;
 
-        if (Config.advancedNoiseFiltering) {
+        if (advancedNoiseFiltering) {
             // バンドパスフィルターを適用しつつ、RMS・ゼロ交差率・top-kを単一パスで同時計算
             double prevX = pcmData[0];
             double prevY_HP = pcmData[0];
@@ -77,8 +91,8 @@ public final class AudioUtils {
 
             // ZCRが高い（高周波数成分が支配的、ホワイトノイズや打鍵音）場合は減衰
             double zcr = (double) zeroCrossings / length;
-            if (zcr > 0.15) {
-                noisePenalty = 0.1; // 音量を大幅に下げる
+            if (zcr > ZCR_NOISE_THRESHOLD) {
+                noisePenalty = ZCR_NOISE_PENALTY; // 音量を大幅に下げる
             }
         } else {
             // フィルタリング無効時: PCMデータから直接計算（中間配列アロケーションなし）
@@ -107,7 +121,7 @@ public final class AudioUtils {
         rms *= noisePenalty;
 
         // 事実上の無音
-        if (rms < 1.0) {
+        if (rms < SILENCE_THRESHOLD) {
             return 0.0;
         }
 
@@ -118,7 +132,7 @@ public final class AudioUtils {
         // 人間の声のダイナミックレンジに合わせてスケールを調整
         // Configで設定されたベース値と乗数を使用する
         double scaledDb = baseValue + (dbfs * multiplier);
-        return Math.min(200.0, Math.max(0.0, scaledDb));
+        return Math.min(SCALED_DB_MAX, Math.max(0.0, scaledDb));
     }
 
     /**

@@ -20,11 +20,15 @@ public class VoiceMeterManager {
      * BossBar進捗計算用の最大dB値
      */
     private static final double MAX_DB = 200.0;
+    private static final int SHOCKWAVE_VISUAL_TICKS = 20;
+    private static final double DECAY_PER_INTERVAL = 2.0;
+    private static final int DEEP_DARK_CHECK_INTERVAL = 40;
+    private static final int CLEANUP_INTERVAL = 200;
 
     private static final Map<UUID, MeterData> playerMeters = new ConcurrentHashMap<>();
 
     public static void updateMeter(ServerPlayer player, double dB) {
-        MeterData data = playerMeters.computeIfAbsent(player.getUUID(), uuid -> createAndRegisterMeter(player));
+        MeterData data = getOrCreateMeter(player);
         // もし他プレイヤーをモニター中の場合は、自分自身の音声でメーターを上書きしない
         if (data.monitorTargetName != null) return;
 
@@ -33,14 +37,14 @@ public class VoiceMeterManager {
     }
 
     public static void updateMonitorMeter(ServerPlayer admin, String targetName, double dB) {
-        MeterData data = playerMeters.computeIfAbsent(admin.getUUID(), uuid -> createAndRegisterMeter(admin));
+        MeterData data = getOrCreateMeter(admin);
         data.updateDb(dB);
         data.monitorTargetName = targetName;
         data.needsUpdate = true;
     }
 
     public static void toggleManual(ServerPlayer player) {
-        MeterData data = playerMeters.computeIfAbsent(player.getUUID(), uuid -> createAndRegisterMeter(player));
+        MeterData data = getOrCreateMeter(player);
         data.manuallyEnabled = !data.manuallyEnabled;
         data.needsUpdate = true;
 
@@ -52,13 +56,13 @@ public class VoiceMeterManager {
     public static void notifyShockwaveFired(ServerPlayer player) {
         MeterData data = playerMeters.get(player.getUUID());
         if (data != null) {
-            data.shockwaveVisualTimer = 20; // 1秒間紫色をキープ (20 ticks)
+            data.shockwaveVisualTimer = SHOCKWAVE_VISUAL_TICKS; // 1秒間紫色をキープ (20 ticks)
             data.needsUpdate = true;
         }
     }
 
     public static void setMonitorMode(ServerPlayer admin, String targetName) {
-        MeterData data = playerMeters.computeIfAbsent(admin.getUUID(), uuid -> createAndRegisterMeter(admin));
+        MeterData data = getOrCreateMeter(admin);
         data.monitorTargetName = targetName;
         data.manuallyEnabled = true; // モニター時は強制的に表示
         data.needsUpdate = true;
@@ -87,6 +91,10 @@ public class VoiceMeterManager {
         return data;
     }
 
+    private static MeterData getOrCreateMeter(ServerPlayer player) {
+        return playerMeters.computeIfAbsent(player.getUUID(), uuid -> createAndRegisterMeter(player));
+    }
+
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer serverPlayer)) return;
@@ -94,7 +102,7 @@ public class VoiceMeterManager {
         MeterData data = playerMeters.get(serverPlayer.getUUID());
 
         // 負荷軽減：40tick(2秒)に1回だけ、古代都市（ディープダークバイオーム）判定を行う
-        if (serverPlayer.tickCount % 40 == 0) {
+        if (serverPlayer.tickCount % DEEP_DARK_CHECK_INTERVAL == 0) {
             boolean inDeepDark = VoiceChatSculkPlugin.isInDeepDark(serverPlayer);
             if (inDeepDark) {
                 if (data == null) {
@@ -117,7 +125,7 @@ public class VoiceMeterManager {
         // 負荷軽減：毎tickではなく、2tickごとに減衰処理を行う
         // メーターの自然減衰（非アトミック操作を回避するためdecayDbを使用）
         if (serverPlayer.tickCount % 2 == 0) {
-            if (data.decayDb(2.0)) {
+            if (data.decayDb(DECAY_PER_INTERVAL)) {
                 data.needsUpdate = true;
             }
 
@@ -156,7 +164,7 @@ public class VoiceMeterManager {
         }
 
         // メモリリーク防止：完全に不要になったデータのクリーンアップ（10秒に1回チェック）
-        if (serverPlayer.tickCount % 200 == 0) {
+        if (serverPlayer.tickCount % CLEANUP_INTERVAL == 0) {
             // 不要になったらBossBarを非表示にする
             if (!data.manuallyEnabled && !data.inAncientCity && data.getDb() <= 0.0 && data.monitorTargetName == null) {
                 data.bossEvent.removePlayer(serverPlayer);
@@ -223,8 +231,8 @@ public class VoiceMeterManager {
 
     public static class MeterData {
         public ServerBossEvent bossEvent;
-        public boolean manuallyEnabled;
-        public boolean inAncientCity;
+        public volatile boolean manuallyEnabled;
+        public volatile boolean inAncientCity;
         public volatile int lastDisplayedDb = -999;
         public volatile int lastDisplayedCooldownSec = -999;
         public volatile int cachedCooldownSec = 0;

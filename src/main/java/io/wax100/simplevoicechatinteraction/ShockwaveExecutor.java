@@ -61,6 +61,13 @@ public class ShockwaveExecutor {
      */
     private static final double BEAM_VIBRATION_INTERVAL = 8.0;
 
+    private static final double REFERENCE_DB = 100.0;
+    private static final double MAX_DB = 200.0;
+    private static final int STUN_SLOWNESS_AMPLIFIER = 200;
+    private static final int STUN_JUMP_AMPLIFIER = 128;
+    private static final double RING_START_RADIUS = 2.0;
+    private static final double RING_STEP = 2.5;
+
     /**
      * 発動元プレイヤーを中心にソニックショックウェーブを発生させる。
      * サーバーメインスレッドで呼ぶこと。
@@ -77,15 +84,14 @@ public class ShockwaveExecutor {
 
         // 閾値〜100dB までのプログレス (0.0 〜 1.0)
         double progressTo100 = 0.0;
-        double referenceDb = 100.0;
-        if (threshold < referenceDb) {
-            progressTo100 = Mth.clamp((dB - threshold) / (referenceDb - threshold), 0.0, 1.0);
+        if (threshold < REFERENCE_DB) {
+            progressTo100 = Mth.clamp((dB - threshold) / (REFERENCE_DB - threshold), 0.0, 1.0);
         }
 
         // 100dB〜200dB までのプログレス (0.0 〜 1.0)
         double overdriveProgress = 0.0;
-        if (dB > referenceDb) {
-            overdriveProgress = Mth.clamp((dB - referenceDb) / (200.0 - referenceDb), 0.0, 1.0);
+        if (dB > REFERENCE_DB) {
+            overdriveProgress = Mth.clamp((dB - REFERENCE_DB) / (MAX_DB - REFERENCE_DB), 0.0, 1.0);
         }
 
         double radius;
@@ -160,29 +166,18 @@ public class ShockwaveExecutor {
                 entity.hurtMarked = true;
                 // ビーム被弾プレイヤーへのスタン効果（移動不能＋視界ぼやけ）
                 if (entity instanceof ServerPlayer hitPlayer) {
-                    int stunDuration = darknessDuration; // 暗闘と同じ持続時間
-                    // 移動不能：Slowness レベル200（実質速度ゼロ）
-                    hitPlayer.addEffect(new MobEffectInstance(
-                            MobEffects.MOVEMENT_SLOWDOWN, stunDuration, 200, false, false, true
-                    ));
-                    // 視界封じ：Blindness（視界が数ブロック先まで霧に覆われる）
-                    // Darkness と重なることで、ほぼ何も見えない状態になる
-                    hitPlayer.addEffect(new MobEffectInstance(
-                            MobEffects.BLINDNESS, stunDuration, 0, false, false, true
-                    ));
-                    // ジャンプ封じ：Jump Boost をマイナス相当にして脱出防止
-                    hitPlayer.addEffect(new MobEffectInstance(
-                            MobEffects.JUMP, stunDuration, 128, false, false, true
-                    ));
+                    applyBeamStunEffects(hitPlayer, darknessDuration);
                 }
                 beamHitCount++;
             }
         }
 
-        spawnBeamEffects(level, eyePos, lookDir, beamLength);
+        Vec3 impactPos = eyePos.add(lookDir.scale(beamLength));
+
+        spawnBeamEffects(level, eyePos, lookDir, beamLength, impactPos);
 
         // ── ビーム沿い＆着弾地点のスカルク振動 ──
-        emitBeamVibrations(level, sourcePlayer, eyePos, lookDir, beamLength);
+        emitBeamVibrations(level, sourcePlayer, eyePos, lookDir, beamLength, impactPos);
 
         LOGGER.debug("[SimpleVoiceChatInteraction] ショックウェーブ発動: {} 位置={} AoE半径={} ビーム長={} ヒット数={}",
                 sourcePlayer.getName().getString(), centerBlock, radialRadius, beamLength,
@@ -251,7 +246,7 @@ public class ShockwaveExecutor {
                 15, radius * 0.3, 0.1, radius * 0.3, 0.02);
 
         int groundY = centerBlock.getY();
-        for (double ringRadius = 2.0; ringRadius <= radius; ringRadius += 2.5) {
+        for (double ringRadius = RING_START_RADIUS; ringRadius <= radius; ringRadius += RING_STEP) {
             int pointsOnRing = Math.max(8, (int) (ringRadius * 4));
             for (int i = 0; i < pointsOnRing; i++) {
                 double angle = 2.0 * Math.PI * i / pointsOnRing;
@@ -282,12 +277,11 @@ public class ShockwaveExecutor {
      * ウォーデン風ソニックビームのパーティクル・サウンドエフェクト。
      * プレイヤーの視線方向にソニックブームパーティクルを連続発射する。
      */
-    private void spawnBeamEffects(ServerLevel level, Vec3 eyePos, Vec3 direction, double beamLength) {
+    private void spawnBeamEffects(ServerLevel level, Vec3 eyePos, Vec3 direction, double beamLength, Vec3 impactPos) {
         // ソニックブーム音（ウォーデン固有の音）
         level.playSound(null, BlockPos.containing(eyePos), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 1.5F, 0.5F);
 
         // ビーム到達地点の着弾音
-        Vec3 impactPos = eyePos.add(direction.scale(beamLength));
         BlockPos impactBlockPos = BlockPos.containing(impactPos);
         level.playSound(null, impactBlockPos, SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.PLAYERS, 0.8F, 0.3F);
         level.playSound(null, impactBlockPos, SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 0.6F, 0.5F);
@@ -310,6 +304,28 @@ public class ShockwaveExecutor {
     }
 
     /**
+     * ビーム被弾プレイヤーにスタン効果（移動不能＋視界封じ＋ジャンプ封じ）を適用する。
+     *
+     * @param hitPlayer    被弾プレイヤー
+     * @param stunDuration スタン効果の持続時間（tick）
+     */
+    private void applyBeamStunEffects(ServerPlayer hitPlayer, int stunDuration) {
+        // 移動不能：Slowness レベル200（実質速度ゼロ）
+        hitPlayer.addEffect(new MobEffectInstance(
+                MobEffects.MOVEMENT_SLOWDOWN, stunDuration, STUN_SLOWNESS_AMPLIFIER, false, false, true
+        ));
+        // 視界封じ：Blindness（視界が数ブロック先まで霧に覆われる）
+        // Darkness と重なることで、ほぼ何も見えない状態になる
+        hitPlayer.addEffect(new MobEffectInstance(
+                MobEffects.BLINDNESS, stunDuration, 0, false, false, true
+        ));
+        // ジャンプ封じ：Jump Boost をマイナス相当にして脱出防止
+        hitPlayer.addEffect(new MobEffectInstance(
+                MobEffects.JUMP, stunDuration, STUN_JUMP_AMPLIFIER, false, false, true
+        ));
+    }
+
+    /**
      * ビーム沿いと着弾地点にスカルク振動（GameEvent）を発火する。
      * ビーム経路上のスカルクセンサー→シュリーカーを連鎖的に反応させる。
      *
@@ -318,9 +334,10 @@ public class ShockwaveExecutor {
      * @param eyePos       ビームの始点
      * @param direction    ビームの方向（正規化済み）
      * @param beamLength   ビームの長さ
+     * @param impactPos    ビーム着弾地点
      */
     private void emitBeamVibrations(ServerLevel level, ServerPlayer sourcePlayer,
-                                    Vec3 eyePos, Vec3 direction, double beamLength) {
+                                    Vec3 eyePos, Vec3 direction, double beamLength, Vec3 impactPos) {
         GameEvent gameEvent = SculkVibrationEmitter.getGameEventForFrequency(Config.voiceSculkFrequency);
 
         // ビーム沿いに一定間隔で振動を発生
@@ -331,7 +348,6 @@ public class ShockwaveExecutor {
         }
 
         // 着弾地点にも振動を発生（ビーム末端）
-        Vec3 impactPos = eyePos.add(direction.scale(beamLength));
         level.gameEvent(sourcePlayer, gameEvent, BlockPos.containing(impactPos));
     }
 }
