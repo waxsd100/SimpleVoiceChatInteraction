@@ -42,6 +42,7 @@ public class Config {
     public static final ForgeConfigSpec.DoubleValue SHOCKWAVE_KNOCKBACK_HORIZONTAL;
     public static final ForgeConfigSpec.DoubleValue SHOCKWAVE_KNOCKBACK_VERTICAL;
     public static final ForgeConfigSpec.DoubleValue SHOCKWAVE_OVERDRIVE_MULTIPLIER;
+    public static final ForgeConfigSpec.DoubleValue SHOCKWAVE_SELF_KNOCKBACK;
     public static final ForgeConfigSpec.IntValue SHOCKWAVE_DARKNESS_DURATION;
     public static final ForgeConfigSpec.IntValue SHOCKWAVE_COOLDOWN;
     static final ForgeConfigSpec SPEC;
@@ -82,6 +83,7 @@ public class Config {
     public static volatile double shockwaveKnockbackHorizontal;
     public static volatile double shockwaveKnockbackVertical;
     public static volatile double shockwaveOverdriveMultiplier;
+    public static volatile double shockwaveSelfKnockback;
     public static volatile int shockwaveDarknessDuration;
     public static volatile int shockwaveCooldown;
 
@@ -299,6 +301,14 @@ public class Config {
                         "デフォルト: 0.4")
                 .defineInRange("shockwave_knockback_vertical", 0.4, 0.0, 100.0);
 
+        SHOCKWAVE_SELF_KNOCKBACK = BUILDER
+                .comment("---------------------------------------------------------",
+                        "ショックウェーブ発動時のセルフノックバック強度（ロケットジャンプ）。",
+                        "ビームの逆方向にプレイヤー自身が吹き飛ぶ。dBに比例してスケール。",
+                        "0に設定すると反動なし。",
+                        "範囲: 0.0～10.0。デフォルト: 1.5")
+                .defineInRange("shockwave_self_knockback", 1.5, 0.0, 10.0);
+
         SHOCKWAVE_DARKNESS_DURATION = BUILDER
                 .comment("---------------------------------------------------------",
                         "周囲のプレイヤーに付与される暗闇エフェクトの持続時間（tick単位）。",
@@ -355,6 +365,7 @@ public class Config {
         shockwaveKnockbackHorizontal = SHOCKWAVE_KNOCKBACK_HORIZONTAL.get();
         shockwaveKnockbackVertical = SHOCKWAVE_KNOCKBACK_VERTICAL.get();
         shockwaveOverdriveMultiplier = SHOCKWAVE_OVERDRIVE_MULTIPLIER.get();
+        shockwaveSelfKnockback = SHOCKWAVE_SELF_KNOCKBACK.get();
         shockwaveDarknessDuration = SHOCKWAVE_DARKNESS_DURATION.get();
         shockwaveCooldown = SHOCKWAVE_COOLDOWN.get();
     }

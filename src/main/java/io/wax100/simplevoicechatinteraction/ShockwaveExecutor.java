@@ -179,6 +179,16 @@ public class ShockwaveExecutor {
         // ── ビーム沿い＆着弾地点のスカルク振動 ──
         emitBeamVibrations(level, sourcePlayer, eyePos, lookDir, beamLength, impactPos);
 
+        // ── セルフノックバック（ロケットジャンプ）：ビームの反動で自分が吹き飛ぶ ──
+        if (Config.shockwaveSelfKnockback > 0.0) {
+            // dBに比例してスケール（閾値で最小、200dBで最大）
+            double selfScale = Config.shockwaveSelfKnockback * (damage / Math.max(1.0, (float) Config.shockwaveDamage));
+            // ビームの逆方向に吹き飛ぶ
+            Vec3 recoil = lookDir.scale(-selfScale);
+            sourcePlayer.setDeltaMovement(sourcePlayer.getDeltaMovement().add(recoil.x, recoil.y, recoil.z));
+            sourcePlayer.hurtMarked = true;
+        }
+
         LOGGER.debug("[SimpleVoiceChatInteraction] ショックウェーブ発動: {} 位置={} AoE半径={} ビーム長={} ヒット数={}",
                 sourcePlayer.getName().getString(), centerBlock, radialRadius, beamLength,
                 hitEntityIds.size() + beamHitCount);
