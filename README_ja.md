@@ -45,24 +45,25 @@
 *config/simplevoicechatinteraction-common.toml*
 
 主な設定項目:
-| 名前                                  | デフォルト値  | 説明                                                     |
-|---------------------------------------|---------------|----------------------------------------------------------|
-| `noise_gate_threshold`                | `40.0`        | マイクのノイズ（ホワイトノイズなど）をカットする閾値     |
-| `advanced_noise_filtering`            | `true`        | バンドパスフィルター等による高度なノイズ抑制を有効にする |
-| `voice_normalization`                 | `true`        | プレイヤー間のマイク感度差を自動補正する                 |
-| `voice_normalization_target`          | `70.0`        | 正規化の目標ベースラインdB                               |
-| `wool_dampening`                      | `true`        | ウールブロックによる防音効果を有効にする                 |
-| `wool_dampening_max_db`               | `-20.0`       | ウールで完全に囲まれた場合の最大減衰量（dB）             |
-| `minimum_activation_threshold`        | `60`          | スカルク振動を作動させる最小音量(dB)                     |
-| `shockwave_threshold`                 | `85`          | ショックウェーブを発動する最小音量(dB)                   |
-| `shockwave_radius`                    | `2.0`         | 閾値ギリギリで発動した時の基本半径（ブロック単位）       |
-| `shockwave_100db_radius`              | `10.0`        | 100dB（最大の声）の時の基本半径（ブロック単位）          |
-| `shockwave_damage`                    | `4.0`         | 閾値ギリギリで発動した時の基本ダメージ                   |
-| `shockwave_100db_damage`              | `20.0`        | 100dB（最大の声）の時の基本ダメージ                      |
-| `shockwave_overdrive_multiplier`      | `3.0`         | 100dBを超えた（最大200dB）際のオーバードライブ倍率       |
-| `shockwave_knockback_horizontal`      | `2.0`         | ビーム命中時の水平方向のノックバック基本強度             |
-| `shockwave_warden_damage_multiplier`  | `20.0`        | ウォーデンに対するダメージ倍率                           |
-| `shockwave_cooldown`                  | `30000`       | ショックウェーブのクールダウン(ミリ秒単位)               |
+
+| 名前 | デフォルト値 | 説明 |
+|------|:----------:|------|
+| `noise_gate_threshold` | `40.0` | マイクのノイズ（ホワイトノイズなど）をカットする閾値 |
+| `advanced_noise_filtering` | `true` | バンドパスフィルター等による高度なノイズ抑制を有効にする |
+| `voice_normalization` | `true` | プレイヤー間のマイク感度差を自動補正する |
+| `voice_normalization_target` | `70.0` | 正規化の目標ベースラインdB |
+| `wool_dampening` | `true` | ウールブロックによる防音効果を有効にする |
+| `wool_dampening_max_db` | `-20.0` | ウールで完全に囲まれた場合の最大減衰量（dB） |
+| `minimum_activation_threshold` | `60` | スカルク振動を作動させる最小音量(dB) |
+| `shockwave_threshold` | `85` | ショックウェーブを発動する最小音量(dB) |
+| `shockwave_radius` | `2.0` | 閾値ギリギリで発動した時の基本半径（ブロック単位） |
+| `shockwave_100db_radius` | `10.0` | 100dB（最大の声）の時の基本半径（ブロック単位） |
+| `shockwave_damage` | `4.0` | 閾値ギリギリで発動した時の基本ダメージ |
+| `shockwave_100db_damage` | `20.0` | 100dB（最大の声）の時の基本ダメージ |
+| `shockwave_overdrive_multiplier` | `3.0` | 100dBを超えた（最大200dB）際のオーバードライブ倍率 |
+| `shockwave_knockback_horizontal` | `2.0` | ビーム命中時の水平方向のノックバック基本強度 |
+| `shockwave_warden_damage_multiplier` | `20.0` | ウォーデンに対するダメージ倍率 |
+| `shockwave_cooldown` | `30000` | ショックウェーブのクールダウン(ミリ秒単位) |
 
 ### ショックウェーブ & スカルク反応 早見表（デフォルト設定）
 
