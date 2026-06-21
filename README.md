@@ -40,24 +40,38 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 
 *config/simplevoicechatinteraction-common.toml*
 
-Main configuration keys:
 | Name                                  | Default Value | Description                                                  |
 |---------------------------------------|---------------|--------------------------------------------------------------|
-| `noise_gate_threshold`                | `40.0`        | Noise gate threshold to cut off microphone background noise  |
-| `advanced_noise_filtering`            | `true`        | Enable advanced band-pass & ZCR noise filtering              |
-| `voice_normalization`                 | `true`        | Auto-compensate microphone sensitivity differences           |
-| `voice_normalization_target`          | `70.0`        | Target baseline dB for normalization                         |
-| `wool_dampening`                      | `true`        | Wool blocks reduce voice volume                              |
-| `wool_dampening_max_db`               | `-20.0`       | Max dampening when fully enclosed in wool (dB)               |
-| `minimum_activation_threshold`        | `60`          | Minimum audio level to activate sculk (dB SPL)               |
-| `shockwave_threshold`                 | `85`          | Minimum audio level to trigger the shockwave (dB SPL)        |
-| `shockwave_radius`                    | `4.0`         | Base radius of the shockwave effect at the threshold         |
-| `shockwave_100db_radius`              | `10.0`        | Base radius of the shockwave effect at 100dB                 |
-| `shockwave_damage`                    | `4.0`         | Base damage of the shockwave effect at the threshold         |
-| `shockwave_100db_damage`              | `20.0`        | Base damage of the shockwave effect at 100dB                 |
-| `shockwave_overdrive_multiplier`      | `3.0`         | Overdrive multiplier for volumes between 100dB and 200dB     |
-| `shockwave_warden_damage_multiplier`  | `20.0`        | Damage multiplier against the Warden                         |
-| `shockwave_cooldown`                  | `30000`       | Cooldown of the shockwave effect in milliseconds             |
+| `group_interaction`                   | `true`        | Whether group voice chat triggers sculk vibrations & shockwaves |
+| `whisper_volume_multiplier`           | `0.5`         | Voice volume multiplier while whispering (0.0–1.0)           |
+| `sneak_volume_multiplier`             | `0.5`         | Voice volume multiplier while sneaking (0.0–1.0)             |
+| `sprint_volume_multiplier`            | `2.5`         | Voice volume multiplier while sprinting (0.0–10.0)           |
+| `microphone_base_value`               | `100.0`       | Base value for dBFS → dB SPL conversion (0.0–200.0)          |
+| `microphone_multiplier`               | `2.0`         | Multiplier applied to raw dBFS level (0.1–10.0)              |
+| `noise_gate_threshold`                | `40.0`        | Noise gate threshold to cut off microphone background noise   |
+| `advanced_noise_filtering`            | `true`        | Enable advanced band-pass & ZCR noise filtering               |
+| `voice_normalization`                 | `true`        | Auto-compensate microphone sensitivity differences            |
+| `voice_normalization_target`          | `70.0`        | Target baseline dB for normalization (30.0–150.0)             |
+| `voice_normalization_max_offset`      | `30.0`        | Max normalization offset in dB (0.0–100.0)                    |
+| `wool_dampening`                      | `true`        | Wool blocks reduce voice volume                               |
+| `wool_dampening_max_db`               | `-20.0`       | Max dampening when fully enclosed in wool (dB)                |
+| `voice_sculk_frequency`               | `7`           | Sculk sensor redstone signal strength for voice (1–15)        |
+| `minimum_activation_threshold`        | `60`          | Minimum audio level to activate sculk (dB SPL)                |
+| `shockwave_enabled`                   | `true`        | Enable/disable the Sonic Shockwave feature                    |
+| `shockwave_require_deep_dark`         | `true`        | Restrict shockwave to Deep Dark / otherside dimension         |
+| `shockwave_threshold`                 | `85`          | Minimum audio level to trigger the shockwave (dB SPL)         |
+| `shockwave_radius`                    | `4.0`         | Base radius at the threshold (blocks)                         |
+| `shockwave_100db_radius`              | `10.0`        | Base radius at 100dB (blocks)                                 |
+| `shockwave_damage`                    | `4.0`         | Base damage at the threshold                                  |
+| `shockwave_100db_damage`              | `8.0`         | Base damage at 100dB                                          |
+| `shockwave_overdrive_multiplier`      | `2.0`         | Overdrive multiplier for volumes between 100dB and 200dB      |
+| `shockwave_player_damage_multiplier`  | `0.5`         | Damage multiplier against players                             |
+| `shockwave_monster_damage_multiplier` | `10.0`        | Damage multiplier against monsters                            |
+| `shockwave_warden_damage_multiplier`  | `20.0`        | Damage multiplier against the Warden                          |
+| `shockwave_knockback_horizontal`      | `2.3`         | Horizontal knockback strength                                 |
+| `shockwave_knockback_vertical`        | `0.4`         | Vertical knockback strength                                   |
+| `shockwave_darkness_duration`         | `60`          | Darkness effect duration in ticks (20 ticks = 1 sec)          |
+| `shockwave_cooldown`                  | `30000`       | Cooldown of the shockwave effect in milliseconds              |
 
 ### Shockwave & Sculk Reference (Default Config)
 
@@ -68,14 +82,14 @@ The following table shows what happens at each volume level with default setting
 | **60 dB** (Normal voice) | ✅ | ❌ | — | — | Sculk sensors activate. No shockwave. |
 | **85 dB** (Threshold) | ✅ | ✅ | **2.0 m** | **12.0 m** | Minimum shockwave. Sculk vibrations at player + along beam + impact. |
 | **100 dB** (Loud yell) | ✅ | ✅ | **5.0 m** | **30.0 m** | Maximum before Overdrive. |
-| **200 dB** (Overdrive max) | ✅ | ✅ | **15.0 m** | **90.0 m** | Overdrive ×3.0 applied. Massive area of effect. |
+| **200 dB** (Overdrive max) | ✅ | ✅ | **10.0 m** | **60.0 m** | Overdrive ×2.0 applied. Massive area of effect. |
 
 > **Sculk vibration points during shockwave:**
 > - Player position (AoE center)
 > - Every 8 blocks along the beam (matching sculk sensor detection range)
 > - Beam impact point (end of beam)
 >
-> At 100dB, the beam generates ~4 vibration points. At 200dB, up to ~12 points — enough to chain-activate multiple shriekers and summon the Warden.
+> At 100dB, the beam generates ~4 vibration points. At 200dB, up to ~8 points — enough to chain-activate multiple shriekers and summon the Warden.
 
 ### Shockwave Scaling Formula
 
@@ -89,39 +103,61 @@ The shockwave scales dynamically based on voice volume. It starts scaling from t
 - Minimum volume (Threshold): **12.0** blocks
 - Maximum volume (100dB): **30.0** blocks
 
-**Overdrive Coefficient** (100dB〜200dB, default `overdrive_multiplier = 3.0`)
+**Overdrive Coefficient** (100dB〜200dB, default `overdrive_multiplier = 2.0`)
 
 All radius and damage values at 100dB are further multiplied by this coefficient:
 
 | Volume | Overdrive Coefficient | Base Radius | AoE Radius | Beam Range |
 |:------:|:---------------------:|:-----------:|:----------:|:----------:|
 | **100 dB** | ×1.0 | 10.0 | **5.0 m** | **30.0 m** |
-| **120 dB** | ×1.4 | 14.0 | **7.0 m** | **42.0 m** |
-| **150 dB** | ×2.0 | 20.0 | **10.0 m** | **60.0 m** |
-| **200 dB** | ×3.0 | 30.0 | **15.0 m** | **90.0 m** |
+| **120 dB** | ×1.2 | 12.0 | **6.0 m** | **36.0 m** |
+| **150 dB** | ×1.5 | 15.0 | **7.5 m** | **45.0 m** |
+| **200 dB** | ×2.0 | 20.0 | **10.0 m** | **60.0 m** |
 
 **Radial AoE Damage** (At Default Settings)
 
 | Target Entity | Multiplier | 85 dB (Threshold) | 100 dB | 200 dB (Overdrive) |
 |---|:---:|:---:|:---:|:---:|
-| **Player** | `0.5x` | **2.0** (❤️×1) | **10.0** (❤️×5) | **30.0** (❤️×15) |
-| **Normal (Animals, etc)** | `1.0x` | **4.0** (❤️×2) | **20.0** (❤️×10) | **60.0** (❤️×30) |
-| **Monster** | `5.0x` | **20.0** (❤️×10) | **100.0** (❤️×50) | **300.0** (❤️×150) |
-| **Warden** | `20.0x` | **80.0** (❤️×40) | **400.0** (❤️×200) | **1200.0** (❤️×600) |
+| **Player** | `0.5x` | **2.0** (❤️×1) | **4.0** (❤️×2) | **8.0** (❤️×4) |
+| **Normal (Animals, etc)** | `1.0x` | **4.0** (❤️×2) | **8.0** (❤️×4) | **16.0** (❤️×8) |
+| **Monster** | `10.0x` | **40.0** (❤️×20) | **80.0** (❤️×40) | **160.0** (❤️×80) |
+| **Warden** | `20.0x` | **80.0** (❤️×40) | **160.0** (❤️×80) | **320.0** (❤️×160) |
 
 **Sonic Beam Damage (1.5x AoE)** (At Default Settings)
 
 | Target Entity | Multiplier | 85 dB (Threshold) | 100 dB | 200 dB (Overdrive) |
 |---|:---:|:---:|:---:|:---:|
-| **Player** | `0.5x` | **3.0** (❤️×1.5) | **15.0** (❤️×7.5) | **45.0** (❤️×22.5) |
-| **Normal (Animals, etc)** | `1.0x` | **6.0** (❤️×3) | **30.0** (❤️×15) | **90.0** (❤️×45) |
-| **Monster** | `5.0x` | **30.0** (❤️×15) | **150.0** (❤️×75) | **450.0** (❤️×225) |
-| **Warden** | `20.0x` | **120.0** (❤️×60) | **600.0** (❤️×300) | **1800.0** (❤️×900) |
+| **Player** | `0.5x` | **3.0** (❤️×1.5) | **6.0** (❤️×3) | **12.0** (❤️×6) |
+| **Normal (Animals, etc)** | `1.0x` | **6.0** (❤️×3) | **12.0** (❤️×6) | **24.0** (❤️×12) |
+| **Monster** | `10.0x` | **60.0** (❤️×30) | **120.0** (❤️×60) | **240.0** (❤️×120) |
+| **Warden** | `20.0x` | **120.0** (❤️×60) | **240.0** (❤️×120) | **480.0** (❤️×240) |
 
 ### Voice Volume (dB SPL) Reference
 
-- **200 dB**: Absolute maximum limit of the system.
-- **100 dB**: Microphone limit (clipping). The sound of yelling directly into the microphone or tapping it.
-- **80 to 90 dB**: Very loud voice. Shouting in surprise or laughing loudly.
-- **60 to 70 dB**: Normal conversation level. Relaxed talking on Discord.
-- **40 to 50 dB**: Quiet sounds/noise. Whispering, keyboard typing, mouse clicks, or background noises.
+#### In-game Scale (Microphone Input)
+
+| dB | Description |
+|:---:|---|
+| **200 dB** | System maximum limit. Overdrive ceiling. |
+| **100 dB** | Microphone clipping. Yelling directly into the mic or tapping it. |
+| **80 – 90 dB** | Very loud voice. Shouting in surprise or laughing hard. |
+| **60 – 70 dB** | Normal conversation. Relaxed talking on Discord. |
+| **40 – 50 dB** | Quiet sounds. Whispering, keyboard typing, mouse clicks, background noise. |
+
+#### Real-World dB Reference
+
+> Decibels (dB) use a **logarithmic scale** — every **+10 dB** sounds roughly **twice as loud** to the human ear.
+
+| dB | Real-World Example |
+|:---:|---|
+| **194 dB** | **Theoretical limit of sound in air.** Sound is a pressure wave; at 1 atm, the lowest trough of the wave reaches vacuum — beyond this point the wave can no longer compress and becomes a **shockwave**. |
+| **200 dB** | Exceeds the acoustic limit. Only achievable as a pressure blast (e.g. nuclear detonation at close range). |
+| **160 – 180 dB** | Lightning strike at close range. Large explosions. The 1883 Krakatoa eruption produced ~180 dB at 160 km away. |
+| **140 – 150 dB** | Standing next to a jet engine at full thrust. **Irreversible hearing damage** — eardrum rupture, internal bleeding, lung damage at sustained exposure. |
+| **130 dB** | Human pain threshold. Physical discomfort becomes unbearable. |
+| **120 dB** | Threshold of pain onset. Jet aircraft takeoff at 300m. Prolonged exposure causes permanent hearing loss. |
+| **100 – 110 dB** | Rock concert front row. Chainsaw. Prolonged exposure requires hearing protection. |
+| **80 – 90 dB** | Heavy traffic. Vacuum cleaner. Shouting at 1 meter distance. |
+| **60 – 70 dB** | Normal conversation at 1 meter. Background music. |
+| **40 – 50 dB** | Quiet office. Whispered conversation. |
+| **20 – 30 dB** | Rustling leaves. Quiet bedroom at night. |
