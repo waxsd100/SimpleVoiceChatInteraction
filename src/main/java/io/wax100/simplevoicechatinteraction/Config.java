@@ -25,6 +25,8 @@ public class Config {
     public static final ForgeConfigSpec.BooleanValue VOICE_NORMALIZATION;
     public static final ForgeConfigSpec.DoubleValue VOICE_NORMALIZATION_TARGET;
     public static final ForgeConfigSpec.DoubleValue VOICE_NORMALIZATION_MAX_OFFSET;
+    public static final ForgeConfigSpec.BooleanValue WOOL_DAMPENING;
+    public static final ForgeConfigSpec.DoubleValue WOOL_DAMPENING_MAX_DB;
     public static final ForgeConfigSpec.IntValue VOICE_SCULK_FREQUENCY;
     public static final ForgeConfigSpec.IntValue MINIMUM_ACTIVATION_THRESHOLD;
     public static final ForgeConfigSpec.BooleanValue SHOCKWAVE_ENABLED;
@@ -60,6 +62,9 @@ public class Config {
     public static volatile boolean voiceNormalization;
     public static volatile double voiceNormalizationTarget;
     public static volatile double voiceNormalizationMaxOffset;
+    // ウール防音
+    public static volatile boolean woolDampening;
+    public static volatile double woolDampeningMaxDb;
     // スカルク振動
     public static volatile int voiceSculkFrequency;
     public static volatile int minimumActivationThreshold;
@@ -172,6 +177,24 @@ public class Config {
                         "例: 30.0の場合、最大±30dBまでの補正が許可される。",
                         "範囲: 0.0～100.0。デフォルト: 30.0")
                 .defineInRange("voice_normalization_max_offset", 30.0, 0.0, 100.0);
+        BUILDER.pop();
+
+        BUILDER.push("wool_dampening");
+        WOOL_DAMPENING = BUILDER
+                .comment("---------------------------------------------------------",
+                        "ウール（羊毛）ブロックによる防音効果を有効にする。",
+                        "プレイヤーの周囲にウールブロックがあると、音声レベルが減衰する。",
+                        "バニラのスカルクセンサーもウールで振動が遮断される仕様と一貫。",
+                        "デフォルト: true")
+                .define("wool_dampening", true);
+
+        WOOL_DAMPENING_MAX_DB = BUILDER
+                .comment("---------------------------------------------------------",
+                        "ウールで完全に囲まれた場合の最大減衰量（dB）。",
+                        "6方向（床・天井・4壁）のウール数に比例して減衰。",
+                        "例: -20.0の場合、全方向ウールで-20dB、半分(3方向)で-10dB。",
+                        "範囲: -100.0～0.0。デフォルト: -20.0")
+                .defineInRange("wool_dampening_max_db", -20.0, -100.0, 0.0);
         BUILDER.pop();
 
         BUILDER.push("sculk_vibration");
@@ -312,6 +335,9 @@ public class Config {
         voiceNormalization = VOICE_NORMALIZATION.get();
         voiceNormalizationTarget = VOICE_NORMALIZATION_TARGET.get();
         voiceNormalizationMaxOffset = VOICE_NORMALIZATION_MAX_OFFSET.get();
+
+        woolDampening = WOOL_DAMPENING.get();
+        woolDampeningMaxDb = WOOL_DAMPENING_MAX_DB.get();
 
         voiceSculkFrequency = VOICE_SCULK_FREQUENCY.get();
         minimumActivationThreshold = MINIMUM_ACTIVATION_THRESHOLD.get();

@@ -8,10 +8,14 @@ import de.maxhenkel.voicechat.api.VoicechatPlugin;
 import de.maxhenkel.voicechat.api.events.EventRegistration;
 import de.maxhenkel.voicechat.api.events.MicrophonePacketEvent;
 import de.maxhenkel.voicechat.api.opus.OpusDecoder;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.slf4j.Logger;
@@ -60,6 +64,12 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
      * double[0] = ベースラインEMA値、double[1] = サンプル数
      */
     private final ConcurrentHashMap<UUID, double[]> voiceBaselineMap = new ConcurrentHashMap<>();
+    /**
+     * ウール防音のdBオフセットキャッシュ。
+     * メインスレッドのtickで更新、ネットワークスレッドのprocessAudioInteractionで読み取り。
+     * 値は0.0（減衰なし）から負の値（dB減衰）。
+     */
+    private final ConcurrentHashMap<UUID, Double> woolDampeningMap = new ConcurrentHashMap<>();
 
     private volatile VoicechatApi voicechatApi;
 
@@ -113,9 +123,62 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         }
         emaDbMap.remove(uuid);
         voiceBaselineMap.remove(uuid);
+        woolDampeningMap.remove(uuid);
         activeMonitors.remove(uuid);
         // このプレイヤーを監視しているモニターも解除
         activeMonitors.values().removeIf(targetUUID -> targetUUID.equals(uuid));
+    }
+
+    /**
+     * 1秒ごとにプレイヤー周囲のウールブロックを検査し、防音オフセットをキャッシュする。
+     */
+    @SubscribeEvent
+    public void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) return;
+        if (!(event.player instanceof ServerPlayer serverPlayer)) return;
+        if (!Config.woolDampening) return;
+
+        // 1秒ごとに更新（負荷軽減）
+        if (serverPlayer.tickCount % 20 != 0) return;
+
+        double dampening = calculateWoolDampening(serverPlayer);
+        if (dampening < 0.0) {
+            woolDampeningMap.put(serverPlayer.getUUID(), dampening);
+        } else {
+            woolDampeningMap.remove(serverPlayer.getUUID());
+        }
+    }
+
+    /**
+     * プレイヤー周囲6方向（床・天井・4壁）のウールブロック数を数え、
+     * 比率に応じたdB減衰量を返す。
+     *
+     * @param player 対象プレイヤー
+     * @return dBオフセット（0.0=減衰なし、負の値=減衰あり）
+     */
+    private static double calculateWoolDampening(ServerPlayer player) {
+        ServerLevel level = player.serverLevel();
+        BlockPos feetPos = player.blockPosition();
+        BlockPos headPos = feetPos.above();
+
+        int woolCount = 0;
+
+        // 床
+        if (level.getBlockState(feetPos.below()).is(BlockTags.WOOL)) woolCount++;
+        // 天井
+        if (level.getBlockState(headPos.above()).is(BlockTags.WOOL)) woolCount++;
+        // 4方向の壁（足元または頭の高さにウールがあればその方向をカウント）
+        BlockPos[] feetNeighbors = {feetPos.north(), feetPos.south(), feetPos.east(), feetPos.west()};
+        BlockPos[] headNeighbors = {headPos.north(), headPos.south(), headPos.east(), headPos.west()};
+        for (int i = 0; i < 4; i++) {
+            if (level.getBlockState(feetNeighbors[i]).is(BlockTags.WOOL)
+                    || level.getBlockState(headNeighbors[i]).is(BlockTags.WOOL)) {
+                woolCount++;
+            }
+        }
+
+        // 6方向中のウール比率 × 最大減衰量
+        return (woolCount / 6.0) * Config.woolDampeningMaxDb;
     }
 
     @Override
@@ -163,6 +226,14 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         }
 
         double actualDb = normalizedDb;
+
+        // ── ウール防音: 周囲のウールブロックによる減衰 ──
+        if (Config.woolDampening) {
+            double woolOffset = woolDampeningMap.getOrDefault(serverPlayer.getUUID(), 0.0);
+            if (woolOffset < 0.0) {
+                actualDb = Math.max(0.0, actualDb + woolOffset);
+            }
+        }
         if (isWhispering) {
             double multiplier = Config.whisperVolumeMultiplier;
             if (multiplier <= 0.0) {
