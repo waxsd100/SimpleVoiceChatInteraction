@@ -161,6 +161,8 @@ public class ShockwaveExecutor {
                 applyDamageAndEffects(level, sourcePlayer, entity, beamDamage, darknessDuration);
                 // ノックバックの強さをダメージに比例させる（基本ダメージで正規化）
                 double knockbackScale = beamDamage / Math.max(1.0, (float) Config.shockwaveDamage);
+                // プレイヤーはダメージ倍率が低い分、ノックバックを強めに
+                if (entity instanceof Player) knockbackScale *= 2.0;
                 Vec3 knockback = lookDir.scale(Config.shockwaveKnockbackHorizontal * knockbackScale);
                 entity.setDeltaMovement(entity.getDeltaMovement().add(knockback.x, Config.shockwaveKnockbackVertical * knockbackScale, knockback.z));
                 entity.hurtMarked = true;
