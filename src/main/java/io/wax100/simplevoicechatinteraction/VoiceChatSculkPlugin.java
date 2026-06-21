@@ -353,6 +353,10 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
                     pcmData, Config.microphoneBaseValue, Config.microphoneMultiplier,
                     Config.advancedNoiseFiltering);
 
+            if (Double.isNaN(rawDb)) {
+                rawDb = 0.0;
+            }
+
             // 環境音などの低音量ノイズゲート（Configで指定した閾値未満は無音扱い）
             if (rawDb < Config.noiseGateThreshold) {
                 rawDb = 0.0;
@@ -363,12 +367,12 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             if (rawDb > 0.0 && Config.voiceNormalization) {
                 final double baselineRawDb = rawDb;
                 voiceBaselineMap.compute(playerUUID, (k, prev) -> {
-                    if (prev == null) return new BaselineData(baselineRawDb, 1.0);
+                    if (prev == null || Double.isNaN(prev.ema())) return new BaselineData(baselineRawDb, 1.0);
                     // 適応的学習率: 初期は高速で外れ値の影響を素早く希釈し、安定後は中速で追従
                     double effectiveAlpha = Math.max(BASELINE_ALPHA,
                             ADAPTIVE_ALPHA_NUMERATOR / (prev.sampleCount() + 1.0));
                     double newEma = prev.ema() + effectiveAlpha * (baselineRawDb - prev.ema());
-                    return new BaselineData(newEma, prev.sampleCount() + 1.0);
+                    return new BaselineData(Double.isNaN(newEma) ? baselineRawDb : newEma, prev.sampleCount() + 1.0);
                 });
             }
 
@@ -376,8 +380,9 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
 
             // 指数移動平均 (EMA) を用いて、突発的なポップノイズや外れ値を平滑化する
             double emaDb = emaDbMap.compute(playerUUID, (k, prev) -> {
-                if (prev == null) return finalRawDb;
-                return (EMA_ALPHA * finalRawDb) + ((1.0 - EMA_ALPHA) * prev);
+                if (prev == null || Double.isNaN(prev)) return finalRawDb;
+                double next = (EMA_ALPHA * finalRawDb) + ((1.0 - EMA_ALPHA) * prev);
+                return Double.isNaN(next) ? 0.0 : next;
             });
 
             return emaDb;

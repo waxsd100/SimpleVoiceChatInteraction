@@ -115,7 +115,13 @@ public final class AudioUtils {
         for (double sq : topSquared) {
             topSum += sq;
         }
-        double rms = Math.sqrt((sumSquares - topSum) / validLength);
+        
+        double variance = sumSquares - topSum;
+        // 浮動小数点の演算誤差でマイナスになった場合は無音扱いにして NaN を防ぐ
+        if (variance <= 0.0) {
+            return 0.0;
+        }
+        double rms = Math.sqrt(variance / validLength);
 
         // ZCRなどのノイズ判定ペナルティを適用
         rms *= noisePenalty;
