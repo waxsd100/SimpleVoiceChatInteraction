@@ -32,10 +32,11 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     /**
-     * ベースラインEMAの学習率。
-     * 約50パケット/秒 × alpha=0.01 → 約100パケット（2秒）で安定。
+     * ベースラインEMAの定常状態の学習率（下限値）。
+     * 初期は適応的に高いalphaを使用し、安定後はこの値で継続的に追従する。
+     * alpha=0.02 → 約50パケット（1秒）で大きな変化に追従。
      */
-    private static final double BASELINE_ALPHA = 0.01;
+    private static final double BASELINE_ALPHA = 0.02;
 
     /**
      * 正規化が有効になるまでの最小サンプル数。
@@ -265,7 +266,10 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
                 final double baselineRawDb = rawDb;
                 voiceBaselineMap.compute(playerUUID, (k, prev) -> {
                     if (prev == null) return new double[]{baselineRawDb, 1.0};
-                    prev[0] += BASELINE_ALPHA * (baselineRawDb - prev[0]);
+                    // 適応的学習率: 初期は高速で外れ値の影響を素早く希釈し、安定後は中速で追従
+                    // sampleCount=1→alpha=1.0, =10→0.2, =50→0.04, =100+→0.02(下限)
+                    double effectiveAlpha = Math.max(BASELINE_ALPHA, 2.0 / (prev[1] + 1.0));
+                    prev[0] += effectiveAlpha * (baselineRawDb - prev[0]);
                     prev[1] += 1.0;
                     return prev;
                 });
