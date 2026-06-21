@@ -63,12 +63,12 @@ Main configuration keys:
 
 The following table shows what happens at each volume level with default settings:
 
-| Volume | Sculk Reaction | Shockwave | AoE Radius | Beam Range | Damage | Notes |
-|--------|:--------------:|:---------:|:----------:|:----------:|:------:|-------|
-| **60 dB** (Normal voice) | ✅ | ❌ | — | — | — | Sculk sensors activate. No shockwave. |
-| **85 dB** (Threshold) | ✅ | ✅ | **1.0 m** | **6.0 m** | **4.0** | Minimum shockwave. Sculk vibrations at player + along beam + impact. |
-| **100 dB** (Loud yell) | ✅ | ✅ | **5.0 m** | **30.0 m** | **20.0** | Maximum before Overdrive. |
-| **200 dB** (Overdrive max) | ✅ | ✅ | **15.0 m** | **90.0 m** | **60.0** | Overdrive ×3.0 applied. Massive area of effect. |
+| Volume | Sculk Reaction | Shockwave | AoE Radius | Beam Range | Notes |
+|--------|:--------------:|:---------:|:----------:|:----------:|-------|
+| **60 dB** (Normal voice) | ✅ | ❌ | — | — | Sculk sensors activate. No shockwave. |
+| **85 dB** (Threshold) | ✅ | ✅ | **1.0 m** | **6.0 m** | Minimum shockwave. Sculk vibrations at player + along beam + impact. |
+| **100 dB** (Loud yell) | ✅ | ✅ | **5.0 m** | **30.0 m** | Maximum before Overdrive. |
+| **200 dB** (Overdrive max) | ✅ | ✅ | **15.0 m** | **90.0 m** | Overdrive ×3.0 applied. Massive area of effect. |
 
 > **Sculk vibration points during shockwave:**
 > - Player position (AoE center)
