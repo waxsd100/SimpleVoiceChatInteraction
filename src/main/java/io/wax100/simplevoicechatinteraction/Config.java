@@ -142,7 +142,7 @@ public class Config {
                         "この数値（dB）以下の小さな音は「完全に無音（0dB）」として扱われます。",
                         "扇風機の音やキーボードの打鍵音などを拾ってしまう場合は、この数値を上げて調整してください。",
                         "範囲: 0.0～100.0。デフォルト: 40.0")
-                .defineInRange("noise_gate_threshold", 40.0, 0.0, 100.0);
+                .defineInRange("noise_gate_threshold", 30.0, 0.0, 100.0);
 
         ADVANCED_NOISE_FILTERING = BUILDER
                 .comment("---------------------------------------------------------",
