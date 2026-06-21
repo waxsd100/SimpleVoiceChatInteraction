@@ -89,6 +89,17 @@ The shockwave scales dynamically based on voice volume. It starts scaling from t
 - Minimum volume (Threshold): **6.0** blocks
 - Maximum volume (100dB): **30.0** blocks
 
+**Overdrive Coefficient** (100dB〜200dB, default `overdrive_multiplier = 3.0`)
+
+All radius and damage values at 100dB are further multiplied by this coefficient:
+
+| Volume | Overdrive Coefficient | Base Radius | AoE Radius | Beam Range |
+|:------:|:---------------------:|:-----------:|:----------:|:----------:|
+| **100 dB** | ×1.0 | 10.0 | **5.0 m** | **30.0 m** |
+| **120 dB** | ×1.4 | 14.0 | **7.0 m** | **42.0 m** |
+| **150 dB** | ×2.0 | 20.0 | **10.0 m** | **60.0 m** |
+| **200 dB** | ×3.0 | 30.0 | **15.0 m** | **90.0 m** |
+
 **Radial AoE Damage** (At Default Settings)
 
 | Target Entity | Multiplier | 85 dB (Threshold) | 100 dB | 200 dB (Overdrive) |
