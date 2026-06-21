@@ -127,6 +127,11 @@ public class ShockwaveExecutor {
 
         spawnRadialEffects(level, center, centerBlock, radialRadius);
 
+        // AoE範囲のスカルク振動: プレイヤー周囲のセンサー/シュリーカーを反応させる
+        level.gameEvent(sourcePlayer,
+                SculkVibrationEmitter.getGameEventForFrequency(Config.voiceSculkFrequency),
+                centerBlock);
+
         // ── フェーズ2: 前方へのソニックビーム（ウォーデン風・長射程） ──
         double beamLength = radius * BEAM_LENGTH_SCALE;
         Vec3 lookDir = sourcePlayer.getLookAngle();
