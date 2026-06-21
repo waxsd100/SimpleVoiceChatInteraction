@@ -22,6 +22,9 @@ public class Config {
     public static final ForgeConfigSpec.DoubleValue MICROPHONE_MULTIPLIER;
     public static final ForgeConfigSpec.DoubleValue NOISE_GATE_THRESHOLD;
     public static final ForgeConfigSpec.BooleanValue ADVANCED_NOISE_FILTERING;
+    public static final ForgeConfigSpec.BooleanValue VOICE_NORMALIZATION;
+    public static final ForgeConfigSpec.DoubleValue VOICE_NORMALIZATION_TARGET;
+    public static final ForgeConfigSpec.DoubleValue VOICE_NORMALIZATION_MAX_OFFSET;
     public static final ForgeConfigSpec.IntValue VOICE_SCULK_FREQUENCY;
     public static final ForgeConfigSpec.IntValue MINIMUM_ACTIVATION_THRESHOLD;
     public static final ForgeConfigSpec.BooleanValue SHOCKWAVE_ENABLED;
@@ -53,6 +56,10 @@ public class Config {
     public static volatile double microphoneMultiplier;
     public static volatile double noiseGateThreshold;
     public static volatile boolean advancedNoiseFiltering;
+    // 音声正規化
+    public static volatile boolean voiceNormalization;
+    public static volatile double voiceNormalizationTarget;
+    public static volatile double voiceNormalizationMaxOffset;
     // スカルク振動
     public static volatile int voiceSculkFrequency;
     public static volatile int minimumActivationThreshold;
@@ -137,6 +144,34 @@ public class Config {
                         "キーボードの打鍵音などの高周波ノイズを自動的に計算から除外します。",
                         "デフォルト: true")
                 .define("advanced_noise_filtering", true);
+        BUILDER.pop();
+
+        BUILDER.push("voice_normalization");
+        VOICE_NORMALIZATION = BUILDER
+                .comment("---------------------------------------------------------",
+                        "音声正規化（自動ゲインコントロール）を有効にする。",
+                        "有効にすると、マイク感度や Simple Voice Chat の増幅設定が異なるプレイヤー間でも、",
+                        "全員がほぼ同じ声の大きさでスカルク振動やショックウェーブが発動するように自動補正する。",
+                        "各プレイヤーの『普段の声の大きさ』を学習し、目標値に揃うようオフセットを加算する。",
+                        "デフォルト: true")
+                .define("voice_normalization", true);
+
+        VOICE_NORMALIZATION_TARGET = BUILDER
+                .comment("---------------------------------------------------------",
+                        "正規化の目標ベースライン（dB SPL相当）。",
+                        "全プレイヤーの『普段の声の大きさ』がこの値に揃うように補正される。",
+                        "この値を上げると、全体的にスカルク振動やショックウェーブが発動しやすくなる。",
+                        "目安: 60(普通の会話), 70(やや大きめの声), 80(大きな声)",
+                        "範囲: 30.0～150.0。デフォルト: 70.0")
+                .defineInRange("voice_normalization_target", 70.0, 30.0, 150.0);
+
+        VOICE_NORMALIZATION_MAX_OFFSET = BUILDER
+                .comment("---------------------------------------------------------",
+                        "正規化オフセットの最大値（dB単位）。",
+                        "極端なマイク感度差による過剰な補正を防止する安全弁。",
+                        "例: 30.0の場合、最大±30dBまでの補正が許可される。",
+                        "範囲: 0.0～100.0。デフォルト: 30.0")
+                .defineInRange("voice_normalization_max_offset", 30.0, 0.0, 100.0);
         BUILDER.pop();
 
         BUILDER.push("sculk_vibration");
@@ -273,6 +308,10 @@ public class Config {
         microphoneMultiplier = MICROPHONE_MULTIPLIER.get();
         noiseGateThreshold = NOISE_GATE_THRESHOLD.get();
         advancedNoiseFiltering = ADVANCED_NOISE_FILTERING.get();
+
+        voiceNormalization = VOICE_NORMALIZATION.get();
+        voiceNormalizationTarget = VOICE_NORMALIZATION_TARGET.get();
+        voiceNormalizationMaxOffset = VOICE_NORMALIZATION_MAX_OFFSET.get();
 
         voiceSculkFrequency = VOICE_SCULK_FREQUENCY.get();
         minimumActivationThreshold = MINIMUM_ACTIVATION_THRESHOLD.get();

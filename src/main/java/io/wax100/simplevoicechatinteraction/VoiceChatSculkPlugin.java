@@ -32,6 +32,18 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     /**
+     * ベースラインEMAの学習率。
+     * 約50パケット/秒 × alpha=0.01 → 約100パケット（2秒）で安定。
+     */
+    private static final double BASELINE_ALPHA = 0.01;
+
+    /**
+     * 正規化が有効になるまでの最小サンプル数。
+     * 約100パケット（約2秒の発話）でキャリブレーション完了。
+     */
+    private static final int BASELINE_MIN_SAMPLES = 100;
+
+    /**
      * デバッグコマンド等からアクセスするためのシングルトンインスタンス
      */
     public static volatile VoiceChatSculkPlugin instance;
@@ -42,6 +54,11 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     private final ConcurrentHashMap<UUID, OpusDecoder> decoders = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Double> emaDbMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, UUID> activeMonitors = new ConcurrentHashMap<>();
+    /**
+     * 音声正規化用ベースラインデータ。
+     * double[0] = ベースラインEMA値、double[1] = サンプル数
+     */
+    private final ConcurrentHashMap<UUID, double[]> voiceBaselineMap = new ConcurrentHashMap<>();
 
     private volatile VoicechatApi voicechatApi;
 
@@ -94,6 +111,7 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             decoder.close();
         }
         emaDbMap.remove(uuid);
+        voiceBaselineMap.remove(uuid);
         activeMonitors.remove(uuid);
         // このプレイヤーを監視しているモニターも解除
         activeMonitors.values().removeIf(targetUUID -> targetUUID.equals(uuid));
@@ -130,7 +148,20 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
     public void processAudioInteraction(ServerPlayer serverPlayer, double dB, boolean isWhispering) {
         if (serverPlayer.isRemoved() || serverPlayer.hasDisconnected()) return;
 
-        double actualDb = dB;
+        // ── 音声正規化: プレイヤー間のマイク感度差を自動補正 ──
+        // ゲームプレイ修飾子（囁き・スニーク・ダッシュ）より前に適用
+        double normalizedDb = dB;
+        if (Config.voiceNormalization) {
+            double[] baseline = voiceBaselineMap.get(serverPlayer.getUUID());
+            if (baseline != null && baseline[1] >= BASELINE_MIN_SAMPLES) {
+                double offset = Config.voiceNormalizationTarget - baseline[0];
+                // 極端な補正を防止
+                offset = Math.max(-Config.voiceNormalizationMaxOffset, Math.min(Config.voiceNormalizationMaxOffset, offset));
+                normalizedDb = Math.max(0.0, dB + offset);
+            }
+        }
+
+        double actualDb = normalizedDb;
         if (isWhispering) {
             double multiplier = Config.whisperVolumeMultiplier;
             if (multiplier <= 0.0) {
@@ -226,6 +257,18 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
             // 環境音などの低音量ノイズゲート（Configで指定した閾値未満は無音扱い）
             if (rawDb < Config.noiseGateThreshold) {
                 rawDb = 0.0;
+            }
+
+            // 音声正規化用: 発話時の生データからベースラインを追跡
+            // ノイズゲートを通過した発話時のみdBを学習する（無音時は学習しない）
+            if (rawDb > 0.0 && Config.voiceNormalization) {
+                final double baselineRawDb = rawDb;
+                voiceBaselineMap.compute(playerUUID, (k, prev) -> {
+                    if (prev == null) return new double[]{baselineRawDb, 1.0};
+                    prev[0] += BASELINE_ALPHA * (baselineRawDb - prev[0]);
+                    prev[1] += 1.0;
+                    return prev;
+                });
             }
 
             final double finalRawDb = rawDb;
