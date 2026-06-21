@@ -16,6 +16,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.slf4j.Logger;
@@ -53,6 +54,12 @@ public class ShockwaveExecutor {
      * ビームダメージの倍率（周囲AoEダメージに対する比率）
      */
     private static final float BEAM_DAMAGE_MULTIPLIER = 1.5F;
+
+    /**
+     * ビーム沿いのスカルク振動発生間隔（ブロック単位）。
+     * スカルクセンサーの検知範囲（8ブロック）に合わせて、ビーム全長をカバーする。
+     */
+    private static final double BEAM_VIBRATION_INTERVAL = 8.0;
 
     /**
      * 発動元プレイヤーを中心にソニックショックウェーブを発生させる。
@@ -168,6 +175,9 @@ public class ShockwaveExecutor {
         }
 
         spawnBeamEffects(level, eyePos, lookDir, beamLength);
+
+        // ── ビーム沿い＆着弾地点のスカルク振動 ──
+        emitBeamVibrations(level, sourcePlayer, eyePos, lookDir, beamLength);
 
         LOGGER.debug("[SimpleVoiceChatInteraction] ショックウェーブ発動: {} 位置={} AoE半径={} ビーム長={} ヒット数={}",
                 sourcePlayer.getName().getString(), centerBlock, radialRadius, beamLength,
@@ -293,5 +303,30 @@ public class ShockwaveExecutor {
                     2, 0.15, 0.15, 0.15, 0.01);
         }
     }
-}
 
+    /**
+     * ビーム沿いと着弾地点にスカルク振動（GameEvent）を発火する。
+     * ビーム経路上のスカルクセンサー→シュリーカーを連鎖的に反応させる。
+     *
+     * @param level        ワールド
+     * @param sourcePlayer 発動元プレイヤー
+     * @param eyePos       ビームの始点
+     * @param direction    ビームの方向（正規化済み）
+     * @param beamLength   ビームの長さ
+     */
+    private void emitBeamVibrations(ServerLevel level, ServerPlayer sourcePlayer,
+                                    Vec3 eyePos, Vec3 direction, double beamLength) {
+        GameEvent gameEvent = SculkVibrationEmitter.getGameEventForFrequency(Config.voiceSculkFrequency);
+
+        // ビーム沿いに一定間隔で振動を発生
+        // スカルクセンサーの検知範囲は8ブロックなので、8ブロック間隔でビーム全長をカバー
+        for (double dist = BEAM_VIBRATION_INTERVAL; dist < beamLength; dist += BEAM_VIBRATION_INTERVAL) {
+            Vec3 pos = eyePos.add(direction.scale(dist));
+            level.gameEvent(sourcePlayer, gameEvent, BlockPos.containing(pos));
+        }
+
+        // 着弾地点にも振動を発生（ビーム末端）
+        Vec3 impactPos = eyePos.add(direction.scale(beamLength));
+        level.gameEvent(sourcePlayer, gameEvent, BlockPos.containing(impactPos));
+    }
+}
