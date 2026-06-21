@@ -51,7 +51,7 @@ Main configuration keys:
 | `wool_dampening_max_db`               | `-20.0`       | Max dampening when fully enclosed in wool (dB)               |
 | `minimum_activation_threshold`        | `60`          | Minimum audio level to activate sculk (dB SPL)               |
 | `shockwave_threshold`                 | `85`          | Minimum audio level to trigger the shockwave (dB SPL)        |
-| `shockwave_radius`                    | `2.0`         | Base radius of the shockwave effect at the threshold         |
+| `shockwave_radius`                    | `4.0`         | Base radius of the shockwave effect at the threshold         |
 | `shockwave_100db_radius`              | `10.0`        | Base radius of the shockwave effect at 100dB                 |
 | `shockwave_damage`                    | `4.0`         | Base damage of the shockwave effect at the threshold         |
 | `shockwave_100db_damage`              | `20.0`        | Base damage of the shockwave effect at 100dB                 |
@@ -66,7 +66,7 @@ The following table shows what happens at each volume level with default setting
 | Volume | Sculk Reaction | Shockwave | AoE Radius | Beam Range | Notes |
 |--------|:--------------:|:---------:|:----------:|:----------:|-------|
 | **60 dB** (Normal voice) | ✅ | ❌ | — | — | Sculk sensors activate. No shockwave. |
-| **85 dB** (Threshold) | ✅ | ✅ | **1.0 m** | **6.0 m** | Minimum shockwave. Sculk vibrations at player + along beam + impact. |
+| **85 dB** (Threshold) | ✅ | ✅ | **2.0 m** | **12.0 m** | Minimum shockwave. Sculk vibrations at player + along beam + impact. |
 | **100 dB** (Loud yell) | ✅ | ✅ | **5.0 m** | **30.0 m** | Maximum before Overdrive. |
 | **200 dB** (Overdrive max) | ✅ | ✅ | **15.0 m** | **90.0 m** | Overdrive ×3.0 applied. Massive area of effect. |
 
@@ -82,11 +82,11 @@ The following table shows what happens at each volume level with default setting
 The shockwave scales dynamically based on voice volume. It starts scaling from the `shockwave_threshold` (85dB) up to 100dB linearly. Beyond 100dB, it scales using the Overdrive multiplier up to 200dB.
 
 **Radial AoE Range** (0.5x base radius)
-- Minimum volume (Threshold): Radius **1.0** block
+- Minimum volume (Threshold): Radius **2.0** blocks
 - Maximum volume (100dB): Radius **5.0** blocks
 
 **Sonic Beam Range** (3x base radius)
-- Minimum volume (Threshold): **6.0** blocks
+- Minimum volume (Threshold): **12.0** blocks
 - Maximum volume (100dB): **30.0** blocks
 
 **Overdrive Coefficient** (100dB〜200dB, default `overdrive_multiplier = 3.0`)
