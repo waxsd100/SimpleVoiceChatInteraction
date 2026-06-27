@@ -13,6 +13,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -20,6 +22,7 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.slf4j.Logger;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -323,7 +326,43 @@ public class VoiceChatSculkPlugin implements VoicechatPlugin {
         if (sculkReady && actualDb >= Config.minimumActivationThreshold) {
             cooldownManager.recordSculkActivation(playerUUID, now);
             int frequency = Config.voiceSculkFrequency;
-            server.execute(() -> sculkEmitter.emit(serverPlayer, frequency));
+            final double finalAggroDb = actualDb;
+            server.execute(() -> {
+                sculkEmitter.emit(serverPlayer, frequency);
+
+                // ── モブのアグロ（ヘイト）伝播 ──
+                if (Config.mobAggro) {
+                    double t = Math.min(1.0, finalAggroDb / Math.max(1.0, Config.scaledDbMax));
+                    double aggroRadius = Config.mobAggroMinRadius
+                            + (Config.mobAggroMaxRadius - Config.mobAggroMinRadius) * t;
+                    double aggroRadiusSq = aggroRadius * aggroRadius;
+
+                    List<Monster> monsters = serverPlayer.serverLevel().getEntitiesOfClass(
+                            Monster.class,
+                            serverPlayer.getBoundingBox().inflate(aggroRadius)
+                    );
+
+                    int aggroCount = 0;
+                    for (Monster monster : monsters) {
+                        // ウォーデンは独自の聴覚システムがあるので除外
+                        if (!(monster instanceof Warden)
+                                && serverPlayer.distanceToSqr(monster) <= aggroRadiusSq) {
+
+                            // ターゲットがいない場合に更新（プレイヤーの声に気づいて向かってくる）
+                            if (monster.getTarget() == null || !monster.getTarget().isAlive()) {
+                                monster.setTarget(serverPlayer);
+                                aggroCount++;
+                            }
+                        }
+                    }
+
+                    if (aggroCount > 0) {
+                        LOGGER.debug("[SimpleVoiceChatInteraction] モブアグロ: {} 体, 半径={}, プレイヤー={}",
+                                aggroCount, String.format("%.1f", aggroRadius),
+                                serverPlayer.getName().getString());
+                    }
+                }
+            });
         }
 
         if (shockwaveReady && actualDb >= Config.shockwaveThreshold) {

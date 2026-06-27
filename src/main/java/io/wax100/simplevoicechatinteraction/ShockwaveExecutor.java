@@ -4,10 +4,13 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -15,10 +18,12 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.Tags;
 import org.slf4j.Logger;
 
 import java.util.HashSet;
@@ -67,6 +72,12 @@ public class ShockwaveExecutor {
     private static final int STUN_JUMP_AMPLIFIER = 128;
     private static final double RING_START_RADIUS = 2.0;
     private static final double RING_STEP = 2.5;
+
+    /**
+     * 氷系ブロックのバニラタグ（ice, packed_ice, blue_ice, frosted_ice）。
+     */
+    @SuppressWarnings("deprecation")
+    private static final TagKey<Block> TAG_ICE = TagKey.create(Registries.BLOCK, new ResourceLocation("ice"));
 
     /**
      * 発動元プレイヤーを中心にソニックショックウェーブを発生させる。
@@ -138,6 +149,26 @@ public class ShockwaveExecutor {
                 SculkVibrationEmitter.getGameEventForFrequency(Config.voiceSculkFrequency),
                 centerBlock);
 
+        // ── ガラスと氷の破壊（AoE範囲） ──
+        int brokenBlockCount = 0;
+        if (Config.shockwaveBreakGlass && dB >= Config.shockwaveBreakGlassThreshold) {
+            int blockRadius = Mth.ceil(radialRadius);
+            for (int dx = -blockRadius; dx <= blockRadius; dx++) {
+                for (int dy = -blockRadius; dy <= blockRadius; dy++) {
+                    for (int dz = -blockRadius; dz <= blockRadius; dz++) {
+                        if (dx * dx + dy * dy + dz * dz <= radialRadiusSq) {
+                            BlockPos targetPos = centerBlock.offset(dx, dy, dz);
+                            BlockState state = level.getBlockState(targetPos);
+                            if (isFragileBlock(state)) {
+                                level.destroyBlock(targetPos, false, sourcePlayer);
+                                brokenBlockCount++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // ── フェーズ2: 前方へのソニックビーム（ウォーデン風・長射程） ──
         double beamLength = radius * BEAM_LENGTH_SCALE;
         Vec3 lookDir = sourcePlayer.getLookAngle();
@@ -180,6 +211,16 @@ public class ShockwaveExecutor {
 
         // ── ビーム沿い＆着弾地点のスカルク振動 ──
         emitBeamVibrations(level, sourcePlayer, eyePos, lookDir, beamLength, impactPos);
+
+        // ── ガラスと氷の破壊（ビーム経路） ──
+        if (Config.shockwaveBreakGlass && dB >= Config.shockwaveBreakGlassThreshold) {
+            brokenBlockCount += breakFragileBlocksAlongBeam(level, sourcePlayer, eyePos, lookDir, beamLength);
+        }
+
+        if (brokenBlockCount > 0) {
+            LOGGER.debug("[SimpleVoiceChatInteraction] ガラス/氷ブロック破壊: {} 個, プレイヤー={}",
+                    brokenBlockCount, sourcePlayer.getName().getString());
+        }
 
         // ── セルフノックバック（ロケットジャンプ）：ビームの反動で自分が吹き飛ぶ ──
         if (Config.shockwaveSelfKnockback > 0.0) {
@@ -361,5 +402,58 @@ public class ShockwaveExecutor {
 
         // 着弾地点にも振動を発生（ビーム末端）
         level.gameEvent(sourcePlayer, gameEvent, BlockPos.containing(impactPos));
+    }
+
+    /**
+     * ブロックがガラスや氷などの脆いブロックかどうかをブロックタグで判定する。
+     * <ul>
+     *     <li>{@code forge:glass} — ガラスブロック全般</li>
+     *     <li>{@code forge:glass_panes} — 板ガラス全般</li>
+     *     <li>{@code minecraft:ice} — 氷、氷塊、青氷、薄氷</li>
+     * </ul>
+     */
+    private static boolean isFragileBlock(BlockState state) {
+        if (state.isAir()) return false;
+        return state.is(Tags.Blocks.GLASS)
+                || state.is(Tags.Blocks.GLASS_PANES)
+                || state.is(TAG_ICE);
+    }
+
+    /**
+     * ビーム経路（円柱）上の脆いブロックを破壊する。
+     *
+     * @param level      ワールド
+     * @param player     発動元プレイヤー
+     * @param eyePos     ビームの始点
+     * @param direction  ビームの方向（正規化済み）
+     * @param beamLength ビームの長さ
+     * @return 破壊したブロック数
+     */
+    private static int breakFragileBlocksAlongBeam(ServerLevel level, ServerPlayer player,
+                                                    Vec3 eyePos, Vec3 direction, double beamLength) {
+        int count = 0;
+        Vec3 beamEnd = eyePos.add(direction.scale(beamLength));
+        AABB beamBounds = new AABB(eyePos, beamEnd).inflate(BEAM_WIDTH);
+
+        BlockPos min = BlockPos.containing(beamBounds.minX, beamBounds.minY, beamBounds.minZ);
+        BlockPos max = BlockPos.containing(beamBounds.maxX, beamBounds.maxY, beamBounds.maxZ);
+
+        for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
+            Vec3 blockCenter = Vec3.atCenterOf(pos);
+            Vec3 toBlock = blockCenter.subtract(eyePos);
+            double projection = toBlock.dot(direction);
+            if (projection < 0.0 || projection > beamLength) continue;
+
+            Vec3 closestOnBeam = eyePos.add(direction.scale(projection));
+            double distSq = blockCenter.distanceToSqr(closestOnBeam);
+            if (distSq <= BEAM_WIDTH * BEAM_WIDTH) {
+                BlockState state = level.getBlockState(pos);
+                if (isFragileBlock(state)) {
+                    level.destroyBlock(pos, false, player);
+                    count++;
+                }
+            }
+        }
+        return count;
     }
 }

@@ -53,6 +53,11 @@ public class Config {
     public static final ForgeConfigSpec.DoubleValue SHOCKWAVE_SELF_KNOCKBACK;
     public static final ForgeConfigSpec.IntValue SHOCKWAVE_DARKNESS_DURATION;
     public static final ForgeConfigSpec.IntValue SHOCKWAVE_COOLDOWN;
+    public static final ForgeConfigSpec.BooleanValue SHOCKWAVE_BREAK_GLASS;
+    public static final ForgeConfigSpec.DoubleValue SHOCKWAVE_BREAK_GLASS_THRESHOLD;
+    public static final ForgeConfigSpec.BooleanValue MOB_AGGRO;
+    public static final ForgeConfigSpec.DoubleValue MOB_AGGRO_MIN_RADIUS;
+    public static final ForgeConfigSpec.DoubleValue MOB_AGGRO_MAX_RADIUS;
     static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
     // インタラクションフィルター
@@ -102,6 +107,13 @@ public class Config {
     public static volatile double shockwaveSelfKnockback;
     public static volatile int shockwaveDarknessDuration;
     public static volatile int shockwaveCooldown;
+    public static volatile boolean shockwaveBreakGlass;
+    public static volatile double shockwaveBreakGlassThreshold;
+
+    // モブアグロ
+    public static volatile boolean mobAggro;
+    public static volatile double mobAggroMinRadius;
+    public static volatile double mobAggroMaxRadius;
 
     static {
         BUILDER.push("interaction_filters");
@@ -285,6 +297,26 @@ public class Config {
                         "この値より小さい音声は無視される。",
                         "範囲: 0～200。デフォルト: 60")
                 .defineInRange("minimum_activation_threshold", 60, 0, 200);
+
+        MOB_AGGRO = BUILDER
+                .comment("---------------------------------------------------------",
+                        "声によってゾンビやスケルトンなどの敵対モブが引き寄せられる（アグロする）機能を有効にする。",
+                        "デフォルト: true")
+                .define("mob_aggro", true);
+
+        MOB_AGGRO_MIN_RADIUS = BUILDER
+                .comment("---------------------------------------------------------",
+                        "モブがプレイヤーの声に反応する最小半径（ブロック単位）。",
+                        "音量が低くてもこの範囲内のモブは反応する。",
+                        "範囲: 1.0～128.0。デフォルト: 16.0")
+                .defineInRange("mob_aggro_min_radius", 16.0, 1.0, 128.0);
+
+        MOB_AGGRO_MAX_RADIUS = BUILDER
+                .comment("---------------------------------------------------------",
+                        "モブがプレイヤーの声に反応する最大半径（ブロック単位）。",
+                        "最大音量でもこの半径を超えることはない。",
+                        "範囲: 1.0～256.0。デフォルト: 64.0")
+                .defineInRange("mob_aggro_max_radius", 64.0, 1.0, 256.0);
         BUILDER.pop();
 
         BUILDER.push("sonic_shockwave");
@@ -392,6 +424,18 @@ public class Config {
                         "プレイヤーごとのショックウェーブ発動クールダウン（ミリ秒単位）。",
                         "範囲: 1000～300000。デフォルト: 30000（30秒）")
                 .defineInRange("shockwave_cooldown", 30000, 1000, 300000);
+
+        SHOCKWAVE_BREAK_GLASS = BUILDER
+                .comment("---------------------------------------------------------",
+                        "ショックウェーブ発動時（または大声を出した時）に周囲のガラスや氷が割れる機能を有効にする。",
+                        "デフォルト: true")
+                .define("shockwave_break_glass", true);
+
+        SHOCKWAVE_BREAK_GLASS_THRESHOLD = BUILDER
+                .comment("---------------------------------------------------------",
+                        "ガラスが割れる最小の音量（dB SPL相当）。",
+                        "範囲: 0～200。デフォルト: 100")
+                .defineInRange("shockwave_break_glass_threshold", 100.0, 0.0, 200.0);
         BUILDER.pop();
 
         SPEC = BUILDER.build();
@@ -447,5 +491,10 @@ public class Config {
         shockwaveSelfKnockback = SHOCKWAVE_SELF_KNOCKBACK.get();
         shockwaveDarknessDuration = SHOCKWAVE_DARKNESS_DURATION.get();
         shockwaveCooldown = SHOCKWAVE_COOLDOWN.get();
+        shockwaveBreakGlass = SHOCKWAVE_BREAK_GLASS.get();
+        shockwaveBreakGlassThreshold = SHOCKWAVE_BREAK_GLASS_THRESHOLD.get();
+        mobAggro = MOB_AGGRO.get();
+        mobAggroMinRadius = MOB_AGGRO_MIN_RADIUS.get();
+        mobAggroMaxRadius = MOB_AGGRO_MAX_RADIUS.get();
     }
 }

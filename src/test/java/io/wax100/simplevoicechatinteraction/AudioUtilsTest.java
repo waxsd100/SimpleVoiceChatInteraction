@@ -40,6 +40,11 @@ class AudioUtilsTest {
         Config.zcrNoisePenalty = 0.1;
         Config.silenceThreshold = 1.0;
         Config.scaledDbMax = 200.0;
+        Config.shockwaveBreakGlass = true;
+        Config.shockwaveBreakGlassThreshold = 100.0;
+        Config.mobAggro = true;
+        Config.mobAggroMinRadius = 16.0;
+        Config.mobAggroMaxRadius = 64.0;
     }
 
     // ── 音声レベル計算テスト ─────────────────────────────────────────────

@@ -22,6 +22,7 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 - **Voice Normalization (AGC)**: Automatically compensates for microphone sensitivity differences between players. Everyone's voice triggers sculk/shockwave at a consistent level regardless of their SVC settings
 - **Wool Dampening**: Surrounding yourself with wool blocks reduces voice volume — just like vanilla sculk sensors are blocked by wool. Up to -20dB when fully enclosed in 6 directions
 - Advanced noise suppression filters (Band-pass filter and Zero-crossing rate penalty to filter out keyboard types and white noise)
+- **Mob Aggro propagation**: Hostile mobs like zombies and skeletons are attracted to the player's voice
 - Bonus damage multipliers against monsters and wardens
 - Optional support for group chat vibrations
 - Voice volume is automatically reduced when whispering/sneaking
@@ -57,6 +58,9 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 | `wool_dampening_max_db`               | `-20.0`       | Max dampening when fully enclosed in wool (dB)                |
 | `voice_sculk_frequency`               | `7`           | Sculk sensor redstone signal strength for voice (1–15)        |
 | `minimum_activation_threshold`        | `60`          | Minimum audio level to activate sculk (dB SPL)                |
+| `mob_aggro`                           | `true`        | Enable hostile mobs being attracted by voice                  |
+| `mob_aggro_min_radius`                | `16.0`        | Minimum radius for mob aggro (blocks)                         |
+| `mob_aggro_max_radius`                | `64.0`        | Maximum radius for mob aggro (blocks)                         |
 | `shockwave_enabled`                   | `true`        | Enable/disable the Sonic Shockwave feature                    |
 | `shockwave_require_deep_dark`         | `true`        | Restrict shockwave to Deep Dark / otherside dimension         |
 | `shockwave_threshold`                 | `85`          | Minimum audio level to trigger the shockwave (dB SPL)         |
@@ -72,6 +76,8 @@ This server side Forge mod allows Simple Voice Chat to interact with your Minecr
 | `shockwave_knockback_vertical`        | `0.4`         | Vertical knockback strength                                   |
 | `shockwave_darkness_duration`         | `60`          | Darkness effect duration in ticks (20 ticks = 1 sec)          |
 | `shockwave_cooldown`                  | `30000`       | Cooldown of the shockwave effect in milliseconds              |
+| `shockwave_break_glass`               | `true`        | Enable glass and ice breaking on shockwave / loud yell        |
+| `shockwave_break_glass_threshold`     | `100.0`       | Minimum audio level to break glass (dB SPL)                   |
 
 ### Shockwave & Sculk Reference (Default Config)
 
